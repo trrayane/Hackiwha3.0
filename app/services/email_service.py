@@ -34,6 +34,10 @@ _BASE_TEMPLATE = """\
 
 
 def _send_email(to_email: str, subject: str, text_body: str, html_body: str) -> None:
+    if not settings.smtp_configured:
+        logger.info("SMTP not configured; skipping email %r to %s", subject, to_email)
+        return
+
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = f"{settings.smtp_from_name} <{settings.smtp_from_email}>"

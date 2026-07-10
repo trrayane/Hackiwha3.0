@@ -18,13 +18,20 @@ class Settings(BaseSettings):
     reset_token_expire_minutes: int = 30
     reset_resend_cooldown_seconds: int = 60
 
-    smtp_host: str
+    # SMTP is optional. It powers only the password-reset email
+    # (POST /auth/forgot-password). Leave blank to run without it — the app
+    # still boots and forgot-password responds normally, it just won't send.
+    smtp_host: str = ""
     smtp_port: int = 587
-    smtp_user: str
-    smtp_password: str
-    smtp_from_email: str
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "no-reply@jingle-engine.local"
     smtp_from_name: str = "Jingle Engine"
     smtp_use_tls: bool = True
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host)
 
     redis_url: str = "redis://localhost:6379/0"
 
