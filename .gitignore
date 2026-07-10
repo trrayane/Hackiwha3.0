@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+
+# Local tooling / caches
+.pytest_cache/
+.claude/
+.ruff_cache/
+.mypy_cache/
+
+# Uploaded media (user data, stored on disk by LocalStorageService)
+uploads/
