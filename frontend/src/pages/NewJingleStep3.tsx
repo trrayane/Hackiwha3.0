@@ -1,80 +1,233 @@
+import React from 'react';
+import { Sidebar } from '../components/Sidebar';
+import '../App.css'; 
+import { 
+  ArrowLeft, 
+  Moon, 
+  Sun, 
+  Bell, 
+  Music, 
+  Camera, 
+  AudioLines, 
+  Video, 
+  Radio, 
+  ShoppingBag 
+} from 'lucide-react';
 
-import TopNavigation from '../components/TopNavigation'; 
-import React, { useState } from 'react';
-export default function NewJingleStep3({ onNext, onBack }) {
- 
-  const [selectedPlatform, setSelectedPlatform] = useState('TikTok');
+export default function NewJingleStep3({ 
+  onNext, 
+  onBack 
+}: { 
+  onNext: () => void; 
+  onBack: () => void; 
+}) {
+  const colors = {
+    color: '#EDF7ED',
+    white: '#FFFFFF',
+    border: '#D9D9D9',
+    backgroundLightMode: '#FCFBF6',
+    backgroundDarkMode: '#282900',
+    primaryAccent: '#337738',
+    secondaryAccent: '#B4D44D',
+    success: '#A4E3A4',
+    headings: '#282900',
+    secondaryText: '#5C6B4D',
+    cardBackgroundsLavender: '#EDF9ED',
+    cardBackgroundsPeach: '#F5F9E3',
+    cardBackgroundsMint: '#E6F5E2',
+    primaryAccentlight: 'color-mix(in srgb, #337738 14%, transparent)',
+    dangerRed: '#D9383A',
+    nextGreenButton: '#2E6F40'
+  };
+
+  const [activeTab, setActiveTab] = React.useState('new-jingle');
+  
+  // State to track which platform grid item is clicked/active
+  const [selectedPlatform, setSelectedPlatform] = React.useState('TikTok');
 
   const platforms = [
-    { name: "TikTok", time: "6 - 9 sec", icon: <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 2.78-1.15 5.54-3.33 7.37-1.84 1.54-4.29 2.21-6.67 1.83-2.61-.42-5.01-2.14-6.17-4.52-1.28-2.6-1.07-5.83.6-8.22 1.4-1.99 3.73-3.14 6.13-3.2v4.06c-1.49.07-2.95.84-3.79 2.11-.8 1.22-.9 2.87-.27 4.17.65 1.35 2.13 2.2 3.65 2.22 1.55.02 3.08-.73 3.88-2.06.6-1.01.83-2.21.82-3.38-.03-6.66-.02-13.33-.02-19.99h3.04z"/></svg> },
-    { name: "Instagram reels", time: "6 - 9 sec", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8a5 5 0 015-5h8a5 5 0 015 5v8a5 5 0 01-5 5H8a5 5 0 01-5-5V8z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> },
-    { name: "Spotify ads", time: "6 - 9 sec", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg> },
-    { name: "Youtube", time: "6 - 9 sec", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> },
-    { name: "Classic radio", time: "6 - 9 sec", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> },
-    { name: "In store", time: "6 - 9 sec", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> }
+    { id: 'TikTok', name: 'TikTok', duration: '6 - 9 sec', icon: <Music size={20} /> },
+    { id: 'Instagram reels', name: 'Instagram reels', duration: '6 - 9 sec', icon: <Camera size={20} /> },
+    { id: 'Spotify ads', name: 'Spotify ads', duration: '6 - 9 sec', icon: <AudioLines size={20} /> },
+    { id: 'Youtube', name: 'Youtube', duration: '6 - 9 sec', icon: <Video size={20} /> },
+    { id: 'Classic radio', name: 'Classic radio', duration: '6 - 9 sec', icon: <Radio size={20} /> },
+    { id: 'In store', name: 'In store', duration: '6 - 9 sec', icon: <ShoppingBag size={20} /> },
   ];
 
   return (
-    <div className="bg-[#eef2f6] p-4 md:p-8 min-h-screen flex justify-center font-sans">
-      <div className="max-w-4xl w-full space-y-4">
-        <TopNavigation />
+    <div style={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      backgroundColor: colors.white, 
+      fontFamily: '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', 
+      color: '#111111' 
+    }}>
+      
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} colors={colors} />
+
+      {/* WINDOW HUB LAYOUT CONTAINER */}
+      <main style={{ 
+        flexGrow: 1, 
+        padding: '24px 24px 0 24px', 
+        boxSizing: 'border-box', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '20px',
+        height: '100vh'
+      }}>
         
-        <div className="bg-white rounded-[2rem] p-8 md:p-12 shadow-sm border border-gray-100 min-h-[600px]">
-          <div className="mb-10">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Create New Jingle</h1>
-            <p className="text-gray-500 font-medium">Tell us about your brand and let the magic happen.</p>
+        {/* TOP NAVBAR */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.backgroundLightMode, borderRadius: '40px', padding: '12px 28px', border: '1px solid ' + colors.border }}>
+          <div onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }}>
+            <ArrowLeft size={22} color={colors.headings} strokeWidth={2.5} />
+            <span style={{ fontSize: '20px', fontWeight: '700', color: colors.headings }}>New Jingle</span>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '95px', height: '51px', display: 'flex', backgroundColor: colors.primaryAccentlight, borderRadius: '40px', padding: '2px 4px', alignItems: 'center', gap: '4px', border: '1px solid ' + colors.border }}>
+              <button style={{ border: 'none', backgroundColor: 'transparent', padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Moon size={23} color={colors.primaryAccent} strokeWidth={2.2} />
+              </button>
+              <button style={{ width: '43px', height: '43px', border: 'none', backgroundColor: colors.white, borderRadius: '50%', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', boxShadow: '0px 1px 3px rgba(0,0,0,0.05)' }}>
+                <Sun size={23} color={colors.headings} strokeWidth={2.2} />
+              </button>
+            </div>
+            <div style={{ width: '51px', height: '51px', backgroundColor: colors.primaryAccentlight, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #EAE9E4', cursor: 'pointer' }}>
+              <Bell size={23} color={colors.headings} strokeWidth={2.2} />
+            </div>
+          </div>
+        </div>
+
+        {/* MIDDLE FORM PANEL */}
+        <div style={{ 
+          flexGrow: 1, 
+          backgroundColor: colors.backgroundLightMode, 
+          border: '1px solid ' + colors.border, 
+          borderBottom: 'none', 
+          borderRadius: '36px 36px 0 0', 
+          padding: '40px 60px 24px 60px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '40px', 
+          boxSizing: 'border-box',
+          overflowY: 'auto'
+        }}>
+          
+          <div>
+            <h1 style={{ fontSize: '32px', color: colors.headings, margin: '0 0 6px 0', fontWeight: '700', letterSpacing: '-0.5px' }}>Create New Jingle</h1>
+            <p style={{ fontSize: '18px', color: colors.secondaryText, margin: 0, fontWeight: '500' }}>Tell us about your brand and let the magic happen.</p>
           </div>
 
-          {/* Stepper */}
-          <div className="flex items-center justify-center mb-10">
-            <div className="flex items-center w-full max-w-2xl px-8">
-              <div className="flex flex-col items-center relative"><div className="w-8 h-8 rounded-full bg-[#0f3d2e] text-white flex items-center justify-center font-bold text-sm z-10">1</div><span className="text-[10px] font-bold text-[#0f3d2e] absolute top-10 whitespace-nowrap">Brand basics</span></div>
-              <div className="flex-1 h-[2px] bg-[#0f3d2e]"></div>
-              <div className="flex flex-col items-center relative"><div className="w-8 h-8 rounded-full bg-[#0f3d2e] text-white flex items-center justify-center font-bold text-sm z-10">2</div><span className="text-[10px] font-bold text-[#0f3d2e] absolute top-10 whitespace-nowrap">Audience & Context</span></div>
-              <div className="flex-1 h-[2px] bg-[#0f3d2e]"></div>
-              <div className="flex flex-col items-center relative"><div className="w-8 h-8 rounded-full bg-[#0f3d2e] text-white flex items-center justify-center font-bold text-sm z-10">3</div><span className="text-[10px] font-bold text-[#0f3d2e] absolute top-10 whitespace-nowrap">Platform Selection</span></div>
-              <div className="flex-1 h-[2px] bg-gray-200"></div>
-              <div className="flex flex-col items-center relative"><div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-sm z-10">4</div><span className="text-[10px] font-medium text-gray-400 absolute top-10 whitespace-nowrap">Creative Direction</span></div>
+          {/* STEPPER PROGRESS TRACK (Step 3 Active) */}
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '10px 0 20px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', position: 'relative', width: '70%', justifyContent: 'space-between' }}>
+              
+              {/* Stepper Base Line */}
+              <div style={{ position: 'absolute', top: '20px', left: 0, right: 0, height: '2px', backgroundColor: '#E2E2DF', zIndex: 1 }}></div>
+              {/* Green filled line covering nodes 1 to 3 */}
+              <div style={{ position: 'absolute', top: '20px', left: 0, width: '66.6%', height: '2px', backgroundColor: colors.primaryAccent, zIndex: 1 }}></div>
+              
+              {/* Step 1 Node */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 2, position: 'relative' }}>
+                <div style={{ width: '42px', height: '42px', backgroundColor: colors.primaryAccent, color: colors.white, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '16px' }}>1</div>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: colors.secondaryText, position: 'absolute', bottom: '-24px', whiteSpace: 'nowrap' }}>Brand basics</span>
+              </div>
+
+              {/* Step 2 Node */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 2, position: 'relative' }}>
+                <div style={{ width: '42px', height: '42px', backgroundColor: colors.primaryAccent, color: colors.white, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '16px' }}>2</div>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: colors.secondaryText, position: 'absolute', bottom: '-24px', whiteSpace: 'nowrap' }}>Audience & Context</span>
+              </div>
+
+              {/* Step 3 Node (Active Highlighted Green) */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 2, position: 'relative' }}>
+                <div style={{ width: '42px', height: '42px', backgroundColor: colors.primaryAccent, color: colors.white, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '16px' }}>3</div>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: colors.primaryAccent, position: 'absolute', bottom: '-24px', whiteSpace: 'nowrap' }}>Platform Selection</span>
+              </div>
+
+              {/* Step 4 Node */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', zIndex: 2, position: 'relative' }}>
+                <div style={{ width: '42px', height: '42px', backgroundColor: '#EBEBE8', color: colors.secondaryText, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '16px' }}>4</div>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#A1A19D', position: 'absolute', bottom: '-24px', whiteSpace: 'nowrap' }}>Creative Direction</span>
+              </div>
+
             </div>
           </div>
 
-          <div className="max-w-2xl mx-auto space-y-6">
-            <label className="block text-sm font-semibold text-gray-800">Select Target Platform</label>
+          {/* PLATFORM GRID SELECTION AREA */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '720px', width: '100%', margin: '20px auto 0 auto' }}>
+            <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Select Target Platform</label>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-              {platforms.map((platform, idx) => {
-                const isSelected = selectedPlatform === platform.name;
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(3, 1fr)', 
+              gap: '20px', 
+              width: '100%' 
+            }}>
+              {platforms.map((platform) => {
+                const isSelected = selectedPlatform === platform.id;
                 return (
                   <div 
-                    key={idx} 
-                    onClick={() => setSelectedPlatform(platform.name)}
-                    className={`border rounded-xl p-5 cursor-pointer flex flex-col items-start transition-all ${
-                      isSelected 
-                        ? 'border-[#0f3d2e] bg-[#f4f7f6] ring-1 ring-[#0f3d2e] shadow-sm' 
-                        : 'border-gray-200 hover:border-[#0f3d2e] hover:shadow-sm bg-white'
-                    }`}
+                    key={platform.id}
+                    onClick={() => setSelectedPlatform(platform.id)}
+                    style={{
+                      backgroundColor: colors.white,
+                      border: isSelected ? `2px solid ${colors.primaryAccent}` : `1px solid ${colors.border}`,
+                      borderRadius: '16px',
+                      padding: '24px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.15s ease-in-out',
+                      boxShadow: isSelected ? '0px 4px 12px rgba(51, 119, 56, 0.1)' : 'none'
+                    }}
                   >
-                    <div className={`${isSelected ? 'bg-[#0f3d2e]' : 'bg-[#1f2937]'} text-white p-2.5 rounded-lg mb-4 transition-colors`}>
+                    {/* Icon Square */}
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: colors.headings,
+                      color: colors.white,
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
                       {platform.icon}
                     </div>
-                    <h3 className="font-bold text-sm text-gray-900">{platform.name}</h3>
-                    <p className="text-xs text-gray-500 font-medium mt-1">{platform.time}</p>
+
+                    {/* Meta info labels */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>{platform.name}</span>
+                      <span style={{ fontSize: '12px', color: '#8A8A85', fontWeight: '500' }}>{platform.duration}</span>
+                    </div>
                   </div>
                 );
               })}
             </div>
-
-            <div className="flex justify-center items-center space-x-6 pt-6">
-              <button onClick={onBack} className="text-gray-500 font-bold text-sm hover:text-gray-800 transition px-4 py-3">
-                Back
-              </button>
-              <button onClick={onNext} className="bg-[#0f3d2e] text-white px-10 py-3 rounded-lg font-bold text-sm hover:bg-opacity-90 transition shadow-sm">
-                Next Step
-              </button>
-            </div>
           </div>
+
+          {/* LOWER ACTION ACTION BUTTONS ROW */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', width: '100%', maxWidth: '720px', margin: 'auto auto 0 auto', paddingBottom: '10px' }}>
+            <button 
+              onClick={onBack}
+              style={{ flex: 1, height: '52px', border: '1px solid ' + colors.headings, backgroundColor: colors.white, color: colors.headings, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}
+            >
+              Back
+            </button>
+            <button 
+              onClick={onNext}
+              style={{ flex: 1, height: '52px', border: 'none', backgroundColor: colors.nextGreenButton, color: colors.white, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
+
         </div>
-      </div>
+
+      </main>
     </div>
   );
 }

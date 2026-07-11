@@ -1,72 +1,65 @@
-import React from "react";
+import React from 'react';
 
-export interface UsageCardProps {
-  title?: string;
-  used: number;
-  total: number;
-  onIncreaseLimit?: () => void;
-  buttonLabel?: string;
-}
-
-const RADIUS = 70;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-/**
- * UsageCard
- * Donut progress ring showing "used of total" (e.g. jingles generated
- * this period), plus an "Increase limit" call to action.
- */
-export default function UsageCard({
-  title = "Your usage",
-  used,
-  total,
-  onIncreaseLimit,
-  buttonLabel = "Increase limit",
-}: UsageCardProps) {
-  const ratio = total > 0 ? Math.min(used / total, 1) : 0;
-  const dashOffset = CIRCUMFERENCE * (1 - ratio);
-
+export const UsageCard: React.FC = () => {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6">
-      <h3 className="mb-6 font-bold text-gray-900">{title}</h3>
+    <div
+      style={{
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E5E5E5',
+        borderRadius: '24px',
+        padding: '24px',
+        width: '300px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ alignSelf: 'flex-start', fontSize: '16px', fontWeight: 'bold', color: '#111111', marginBottom: '20px' }}>
+        Your Usage
+      </div>
 
-      <div className="relative mb-6 flex items-center justify-center">
-        <svg className="h-40 w-40 -rotate-90 transform">
-          <circle
-            cx="80"
-            cy="80"
-            r={RADIUS}
-            stroke="#e5e7eb"
-            strokeWidth="16"
-            fill="transparent"
+      {/* Circular Progress Representation */}
+      <div style={{ position: 'relative', width: '150px', height: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <svg width="140" height="140" viewBox="0 0 36 36">
+          <path
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            fill="none"
+            stroke="#E5E5E5"
+            strokeWidth="3.5"
           />
-          <circle
-            cx="80"
-            cy="80"
-            r={RADIUS}
-            stroke="#0f3d2e"
-            strokeWidth="16"
-            fill="transparent"
-            strokeDasharray={CIRCUMFERENCE}
-            strokeDashoffset={dashOffset}
+          <path
+            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+            fill="none"
+            stroke="#2E6F40"
+            strokeDasharray="60, 100"
+            strokeWidth="3.5"
             strokeLinecap="round"
           />
         </svg>
-        <div className="absolute flex flex-col items-center">
-          <span className="text-3xl font-bold text-gray-900">{used}</span>
-          <span className="text-xs text-gray-400">Of {total} jingles</span>
+        <div style={{ position: 'absolute', textAlign: 'center' }}>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#111111' }}>3</div>
+          <div style={{ fontSize: '12px', color: '#777777', marginTop: '-2px' }}>Of 5 jingles</div>
         </div>
       </div>
 
-      <hr className="mb-4 border-gray-200" />
+      <hr style={{ width: '100%', border: 'none', borderTop: '1px solid #E5E5E5', margin: '24px 0 16px 0' }} />
 
       <button
-        type="button"
-        onClick={onIncreaseLimit}
-        className="w-full rounded-lg bg-[#f3f4f6] py-3 font-semibold text-gray-800 transition hover:bg-gray-200"
+        style={{
+          width: '100%',
+          backgroundColor: '#2E6F40',
+          color: '#FFFFFF',
+          border: 'none',
+          borderRadius: '10px',
+          padding: '14px 0',
+          fontSize: '15px',
+          fontWeight: '500',
+          cursor: 'pointer',
+        }}
       >
-        {buttonLabel}
+        Increase Limit
       </button>
     </div>
   );
-}
+};

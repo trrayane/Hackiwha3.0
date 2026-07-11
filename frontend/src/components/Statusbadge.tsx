@@ -1,26 +1,31 @@
-import React from "react";
-import type { JingleStatus } from "../types";
+import React from 'react';
 
-const STATUS_STYLES: Record<JingleStatus, string> = {
-  Approved: "bg-[#dcfce7] text-green-700",
-  "In Review": "bg-[#fee2e2] text-red-700",
-  Draft: "bg-gray-100 text-gray-600",
-};
-
-export interface StatusBadgeProps {
-  status: JingleStatus;
+interface StatusBadgeProps {
+  status: 'Approved' | 'In Review' | 'Draft';
 }
 
-/**
- * StatusBadge
- * Small pill showing a jingle's review status, colored by state.
- */
-export default function StatusBadge({ status }: StatusBadgeProps) {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
+  const styles = {
+    Approved: { bg: '#EAF7ED', text: '#2E6F40' },
+    'In Review': { bg: '#FFFCEB', text: '#BFAF10' },
+    Draft: { bg: '#F1F3F5', text: '#6C757D' },
+  };
+
+  const currentStyle = styles[status] || styles.Draft;
+
   return (
     <span
-      className={`rounded-md px-3 py-1 text-xs font-medium ${STATUS_STYLES[status]}`}
+      style={{
+        backgroundColor: currentStyle.bg,
+        color: currentStyle.text,
+        padding: '4px 12px',
+        borderRadius: '6px',
+        fontSize: '13px',
+        fontWeight: '500',
+        display: 'inline-block',
+      }}
     >
       {status}
     </span>
   );
-}
+};

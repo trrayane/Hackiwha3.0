@@ -1,180 +1,297 @@
-import React, { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import React, { useState } from 'react';
 
 export interface RegisterFormData {
   email: string;
-  password: string;
 }
 
-export interface RegisterProps {
-  /** Called with { email, password } when the form is submitted */
-  onSubmit?: (data: RegisterFormData) => void;
-  /** Called when the user clicks the "Sign in" link */
-  onSwitchToLogin?: () => void;
+interface RegisterProps {
+  onSubmit: (data: RegisterFormData) => void;
+  onSwitchToLogin: () => void;
 }
 
-/**
- * Register
- * Self-contained sign-up page (no external components) — split layout
- * with a form panel on the left and a gradient promo panel on the right.
- */
-export default function Register({
-  onSubmit,
-  onSwitchToLogin,
-}: RegisterProps) {
-  const [form, setForm] = useState<RegisterFormData>({ email: "", password: "" });
+export default function Register({ onSubmit, onSwitchToLogin }: RegisterProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const colors = {
+    backgroundLeft: '#FCFBF6',
+    headings: '#282900',
+    secondaryText: '#5C6B4D',
+    primaryAccent: '#337738',
+    inputBg: '#F2F6F1',
+    border: '#D9D9D9',
+    white: '#FFFFFF',
+    textMuted: '#7E7E7A',
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit?.(form);
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+    onSubmit({ email });
   };
-
-  // Loose sine-like curve so it reads as an audio waveform, not a bar chart.
-  const waveformHeights: number[] = [30, 55, 80, 45, 65, 90, 50, 35, 60, 40, 70, 48, 32];
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#d8d7dd] px-4 py-10">
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden shadow-xl bg-white">
-        {/* Left: form panel */}
-        <div className="flex flex-col justify-center px-8 py-10 sm:px-12">
-          <div className="w-full max-w-sm mx-auto">
-            <h1 className="text-xl font-bold text-gray-900">Create an account</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Start managing your audio campaigns today.
-            </p>
+    <div style={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      width: '100vw', 
+      backgroundColor: colors.backgroundLeft, 
+      fontFamily: '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      margin: 0,
+      padding: 0,
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    }}>
+      
+      {/* LEFT COLUMN: FORM INTERFACE */}
+      <div style={{ 
+        flex: '1 1 45%', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        padding: '40px' 
+      }}>
+        <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column' }}>
+          
+          {/* Header Typography */}
+          <h1 style={{ fontSize: '36px', fontWeight: '700', color: colors.headings, margin: '0 0 12px 0', letterSpacing: '-0.5px' }}>
+            Create an account
+          </h1>
+          <p style={{ fontSize: '16px', color: colors.secondaryText, fontWeight: '500', margin: '0 0 36px 0' }}>
+            Start managing your audio ads today.
+          </p>
 
-            <form onSubmit={handleSubmit} className="mt-6">
-              <div className="mb-4">
-                <label
-                  htmlFor="email"
-                  className="mb-1.5 block text-xs font-medium text-gray-700"
-                >
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="name@gmail.com"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#1f3a2e] focus:ring-1 focus:ring-[#1f3a2e]"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="password"
-                  className="mb-1.5 block text-xs font-medium text-gray-700"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={handleChange}
-                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#1f3a2e] focus:ring-1 focus:ring-[#1f3a2e]"
-                />
-              </div>
-
-              <div className="mt-6">
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-[#1f3a2e] py-2.5 text-sm font-semibold text-white transition hover:bg-[#16281f] focus:outline-none focus:ring-2 focus:ring-[#1f3a2e] focus:ring-offset-2"
-                >
-                  Sign Up
-                </button>
-              </div>
-            </form>
-
-            <div className="mt-5 flex items-center gap-3">
-              <span className="h-px flex-1 bg-gray-200" />
-              <span className="text-xs text-gray-400">Or continue with</span>
-              <span className="h-px flex-1 bg-gray-200" />
-            </div>
-
-            <div className="mt-5">
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-white py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              >
-                <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
-                  <path
-                    fill="#4285F4"
-                    d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.85.86-3.04.86-2.34 0-4.32-1.58-5.03-3.71H.94v2.33A9 9 0 0 0 9 18z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M3.97 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.94a9 9 0 0 0 0 8.08l3.03-2.33z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.96l3.03 2.33C4.68 5.16 6.66 3.58 9 3.58z"
-                  />
-                </svg>
-                Google
-              </button>
-            </div>
-
-            <p className="mt-6 text-center text-xs text-gray-500">
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={onSwitchToLogin}
-                className="font-semibold text-gray-900 hover:underline"
-              >
-                Sign in
-              </button>
-            </p>
-          </div>
-        </div>
-
-        {/* Right: promo panel */}
-        <div
-          className="relative hidden md:flex flex-col justify-between overflow-hidden p-10"
-          style={{
-            backgroundImage:
-              "linear-gradient(150deg, #14261c 0%, #33422f 22%, #6a6a4f 46%, #a3826d 72%, #dc9d80 100%)",
-          }}
-        >
-          {/* top spacer keeps the waveform band centered in the upper half */}
-          <div />
-
-          <div
-            className="pointer-events-none mx-auto flex h-36 w-full max-w-[260px] select-none items-center justify-center gap-2.5 opacity-40"
-            aria-hidden="true"
-          >
-            {waveformHeights.map((h, i) => (
-              <span
-                key={i}
-                className="w-1 rounded-full bg-white"
-                style={{ height: `${h}%` }}
+          {/* Form Content */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {/* Input Element: Email */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Email</label>
+              <input
+                type="email"
+                placeholder="name@gmail.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  backgroundColor: colors.inputBg,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '10px',
+                  padding: '0 16px',
+                  boxSizing: 'border-box',
+                  fontSize: '15px',
+                  color: colors.headings,
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
               />
-            ))}
+            </div>
+
+            {/* Input Element: Password */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Password</label>
+              <input
+                type="password"
+                placeholder="............."
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  backgroundColor: colors.inputBg,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '10px',
+                  padding: '0 16px',
+                  boxSizing: 'border-box',
+                  fontSize: '15px',
+                  color: colors.headings,
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            {/* Input Element: Confirm Password */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Confirm Password</label>
+              <input
+                type="password"
+                placeholder="............."
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  backgroundColor: colors.inputBg,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '10px',
+                  padding: '0 16px',
+                  boxSizing: 'border-box',
+                  fontSize: '15px',
+                  color: colors.headings,
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            {/* Core Action Button */}
+            <button
+              type="submit"
+              style={{
+                width: '100%',
+                height: '48px',
+                backgroundColor: colors.primaryAccent,
+                color: colors.white,
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '16px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                marginTop: '12px',
+                transition: 'background-color 0.15s ease'
+              }}
+            >
+              Sign Up
+            </button>
+          </form>
+
+          {/* Alternative Separation Bar */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            margin: '24px 0', 
+            color: colors.textMuted, 
+            fontSize: '14px',
+            fontWeight: '600'
+          }}>
+            <div style={{ flexGrow: 1, height: '1px', backgroundColor: colors.border }}></div>
+            <span style={{ padding: '0 12px' }}>Or continue with</span>
+            <div style={{ flexGrow: 1, height: '1px', backgroundColor: colors.border }}></div>
           </div>
 
-          <div className="relative z-10">
-            <h2 className="text-3xl font-semibold leading-tight tracking-tight text-white">
+          {/* Google SSO Button */}
+          <button
+            type="button"
+            style={{
+              width: '100%',
+              height: '48px',
+              backgroundColor: colors.inputBg,
+              border: `1px solid ${colors.border}`,
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              fontSize: '16px',
+              fontWeight: '700',
+              color: colors.headings,
+              cursor: 'pointer'
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            </svg>
+            Google
+          </button>
+
+          {/* Switch flow link */}
+          <div style={{ textAlign: 'center', marginTop: '36px', fontSize: '14px', fontWeight: '700', color: colors.headings }}>
+            Already Have an Account ?{' '}
+            <span 
+              onClick={onSwitchToLogin}
+              style={{ color: colors.primaryAccent, cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Sign in
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: FULL HEIGHT FLUSH AD PANEL */}
+      <div style={{ 
+        flex: '1 1 55%', 
+        padding: 0, 
+        boxSizing: 'border-box',
+        display: 'flex',
+        height: '100vh'
+      }}>
+        <div style={{ 
+          flexGrow: 1,
+          background: 'linear-gradient(145deg, #2B6630 0%, #68B85C 50%, #90DD6A 100%)',
+          borderRadius: '40px 0 0 40px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          padding: '48px',
+          boxSizing: 'border-box',
+          color: colors.white,
+          textAlign: 'center'
+        }}>
+          
+          {/* ABSTRACT VECTOR AUDIO WAVE BACKGROUND GRAPHIC */}
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '24px',
+            opacity: 0.12,
+            pointerEvents: 'none',
+            padding: '0 40px'
+          }}>
+            <div style={{ width: '12px', height: '160px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '240px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '320px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '200px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '280px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '360px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '240px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '300px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+            <div style={{ width: '12px', height: '180px', backgroundColor: colors.white, borderRadius: '6px' }}></div>
+          </div>
+
+          {/* FRONT TEXT OVERLAYS */}
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: '540px' }}>
+            <h2 style={{ 
+              fontSize: '56px', 
+              fontWeight: '700', 
+              lineHeight: '1.15', 
+              margin: '0 0 24px 0', 
+              letterSpacing: '-1px' 
+            }}>
               Ads that fit their moment.
             </h2>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/80">
+            <p style={{ 
+              fontSize: '20px', 
+              fontWeight: '500', 
+              lineHeight: '1.5', 
+              opacity: 0.9, 
+              margin: 0,
+              padding: '0 20px'
+            }}>
               The creative studio meets SaaS dashboard for modern audio campaigns.
             </p>
           </div>
+
         </div>
       </div>
+
     </div>
   );
 }

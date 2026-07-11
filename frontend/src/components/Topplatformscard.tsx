@@ -1,39 +1,46 @@
-import React from "react";
-import type { PlatformUsage } from "../types";
+import React from 'react';
 
-export interface TopPlatformsCardProps {
-  title?: string;
-  platforms: PlatformUsage[];
-}
+export const TopPlatformsCard: React.FC = () => {
+  const platforms = [
+    { name: 'TikTok', width: '85%', color: '#2E6F40' },
+    { name: 'Radio', width: '70%', color: '#B9D549' },
+    { name: 'Podcast', width: '50%', color: '#A1E3A1' },
+  ];
 
-/**
- * TopPlatformsCard
- * Horizontal bar list showing relative usage per platform
- * (TikTok, Radio, Podcast, ...), each bar colored individually.
- */
-export default function TopPlatformsCard({
-  title = "Top platforms",
-  platforms,
-}: TopPlatformsCardProps) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6">
-      <h3 className="mb-6 font-bold text-gray-900">{title}</h3>
-      <div className="space-y-5">
+    <div
+      style={{
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E5E5E5',
+        borderRadius: '24px',
+        padding: '24px',
+        width: '300px',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#111111', marginBottom: '24px' }}>
+        Top Platforms
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {platforms.map((platform) => (
-          <div key={platform.name} className="flex items-center">
-            <span className="w-16 text-sm text-gray-500">{platform.name}</span>
-            <div className="ml-3 h-4 flex-1 overflow-hidden rounded-sm bg-gray-100">
+          <div key={platform.name} style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ width: '70px', fontSize: '14px', color: '#4A4A4A', fontWeight: '500' }}>
+              {platform.name}
+            </span>
+            <div style={{ flexGrow: 1, height: '16px', backgroundColor: '#FFFFFF', position: 'relative' }}>
               <div
-                className="h-4 rounded-sm"
                 style={{
-                  width: `${platform.percent}%`,
+                  width: platform.width,
+                  height: '100%',
                   backgroundColor: platform.color,
+                  borderRadius: '4px',
                 }}
-              />
+              ></div>
             </div>
           </div>
         ))}
       </div>
     </div>
   );
-}
+};
