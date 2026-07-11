@@ -1,0 +1,7 @@
+LYRICS: فطور الصباح يا أبطال،
+يزيد صحتكم، يزيد حال!
+حليب Soummam قوة ليك،
+مع العايلة يحلى ويكفيك!
+AUDIO: ./_test_work\01ebe1cb449f4365b26432cdc520e976_final.mp3
+DURATION_REQUESTED: 15
+DURATION_ACTUAL: 15
