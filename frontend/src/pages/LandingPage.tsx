@@ -3,11 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 
 // --- IMAGE IMPORTS FROM YOUR SRC/ASSETS/ DIRECTORY ---
-import heroCharacter from '../assets/hero-character.png';
+//import heroCharacter from '../assets/hero-character.png';
 import heroAudio from '../assets/audio.png';
 import step1Card from '../assets/step1-card.png';
 import step2Card from '../assets/step2-card.png';
 import step3Card from '../assets/step3-card.png';
+import heroVideoWebm from '../assets/hero-character.webm';
+import heroVideoMov from '../assets/hero-character.mov';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -249,19 +251,25 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Right Column Character Image */}
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-          <img 
-            src={heroCharacter} 
-            alt="Hero Character" 
-            style={{ 
-              width: '795px', 
-              height: '447px', 
-              objectFit: 'contain',
-              display: 'block' 
-            }} 
-          />
-        </div>
+       {/* Right Column Character Video */}
+<div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+  <video 
+    autoPlay
+    loop
+    muted
+    playsInline
+    style={{ 
+      width: '795px', 
+      height: '447px', 
+      objectFit: 'contain',
+      display: 'block',
+      transform: 'translateX(-40px)' // Kept your layout nudge here!
+    }} 
+  >
+    <source src={heroVideoMov} type="video/mp4;codecs=hvc1" /> 
+    <source src={heroVideoWebm} type="video/webm" />
+  </video>
+</div>
       </section>
 
       {/* 3. HOW IT WORKS */}
@@ -280,9 +288,8 @@ export default function LandingPage() {
               marginBottom: '140px' 
           }}>
             <div style={{ maxWidth: '460px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: colors.primaryAccent, display: 'block', marginBottom: '8px' }}>01 - Tell us the context</span>
-              <h3 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 16px 0', color: colors.headings, letterSpacing: '-1px' }}>Tell us the context</h3>
-              <p style={{ fontSize: '15px', color: colors.secondaryText, lineHeight: '1.6', fontWeight: '500', margin: 0 }}>
+              <h3 style={{ fontSize: '45px', fontWeight: '700', margin: '0 0 16px 0', color: colors.headings, letterSpacing: '-1px' }}>Tell us the context</h3>
+              <p style={{ fontSize: '20px', color: colors.secondaryText, lineHeight: '1.6', fontWeight: '500', margin: 0 }}>
                 Pick the platform, the audience, the mood. A TikTok pre-roll and a retail store loop don't need the same energy. SonicFit knows the difference.
               </p>
             </div>
@@ -306,9 +313,8 @@ export default function LandingPage() {
             marginBottom: '140px' 
           }}>
             <div style={{ maxWidth: '460px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: colors.primaryAccent, display: 'block', marginBottom: '8px' }}>02 - Get real variants, not one guess</span>
-              <h3 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 16px 0', color: colors.headings, letterSpacing: '-1px' }}>Get real variants, not one guess</h3>
-              <p style={{ fontSize: '15px', color: colors.secondaryText, lineHeight: '1.6', fontWeight: '500', margin: 0 }}>
+              <h3 style={{ fontSize: '45px', fontWeight: '700', margin: '0 0 16px 0', color: colors.headings, letterSpacing: '-1px' }}>Get real variants, not one guess</h3>
+              <p style={{ fontSize: '20px', color: colors.secondaryText, lineHeight: '1.6', fontWeight: '500', margin: 0 }}>
                 Every brief generates 2-3 distinct directions. Compare them side by side before you commit.
               </p>
             </div>
@@ -325,9 +331,8 @@ export default function LandingPage() {
           {/* STEP 3 */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '230px' }}>
             <div style={{ maxWidth: '460px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: colors.primaryAccent, display: 'block', marginBottom: '8px' }}>03 - Feedback that actually trains the next round</span>
-              <h3 style={{ fontSize: '32px', fontWeight: '700', margin: '0 0 16px 0', color: colors.headings, letterSpacing: '-1px' }}>Feedback that actually trains the next round</h3>
-              <p style={{ fontSize: '15px', color: colors.secondaryText, lineHeight: '1.6', fontWeight: '500', margin: 0 }}>
+              <h3 style={{ fontSize: '45px', fontWeight: '700', margin: '0 0 16px 0', color: colors.headings, letterSpacing: '-1px' }}>Feedback that actually trains the next round</h3>
+              <p style={{ fontSize: '20px', color: colors.secondaryText, lineHeight: '1.6', fontWeight: '500', margin: 0 }}>
                 Pick the platform, the audience, the mood. A TikTok pre-roll and a retail store loop don't need the same energy. SonicFit knows the difference.
               </p>
             </div>
