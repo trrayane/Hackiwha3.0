@@ -1,9 +1,11 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import Dashboard from "./pages/dashbooard";
+import LandingPage from "./pages/landing";
 import Login, { type LoginFormData } from "./pages/Login";
 import Register, { type RegisterFormData } from "./pages/Register";
 import JingleLibrary from "./pages/JingleLibrary";
+import JingleDetailView from "./pages/JingleDetailView";
 import NewJingleStep1 from "./pages/NewJingleStep1";
 import NewJingleStep2 from "./pages/NewJingleStep2";
 import NewJingleStep3 from "./pages/NewJingleStep3";
@@ -27,6 +29,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/Library" element={<JingleLibrary />} />
       <Route path="/NewJingle1" element={<NewJingleStep1 onNext={() => navigate("/NewJingle2")} />} />
@@ -35,6 +38,7 @@ function AppRoutes() {
       <Route path="/NewJingle4" element={<NewJingleStep4 onBack={() => navigate("/NewJingle3")} onSubmit={() => navigate("/GeneratedJingle")} />} />
        <Route path="/GeneratedJingle" element={<GeneratedJingle />} />
         <Route path="/changeRequest" element={<ChangeRequest />} />
+         <Route path="/jingle/:id" element={<JingleDetailView onBack={() => navigate("/Library")} />} />
        <Route path="/login"
         element={
           <Login

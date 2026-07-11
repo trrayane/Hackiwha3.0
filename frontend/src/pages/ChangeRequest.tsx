@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, PlusCircle, FolderOpen, Settings, LogOut, Sun, Moon, Bell, ArrowLeft, Play } from "lucide-react";
+import { LayoutDashboard, PlusCircle, FolderOpen, Settings, LogOut, Sun, Moon, Bell, ArrowLeft } from "lucide-react";
 
-export default function GeneratedJingle() {
+export default function ChangeRequest() {
   const navigate = useNavigate();
   const [activeNav, setActiveNav] = useState("New jingle");
   const [theme, setTheme] = useState("light");
-  const [rating, setRating] = useState(1);
+  const [feedback, setFeedback] = useState("");
   const [toastMessage, setToastMessage] = useState(null);
 
   const triggerToast = (msg) => {
@@ -31,6 +31,11 @@ export default function GeneratedJingle() {
 
   const handleLogOut = () => {
     triggerToast("Logged out successfully");
+  };
+
+  const handleRegenerate = () => {
+    triggerToast("Regenerating jingle...");
+    setTimeout(() => navigate('/generated-jingle'), 1000);
   };
 
   return (
@@ -103,13 +108,13 @@ export default function GeneratedJingle() {
             <div className="flex items-center space-x-3 text-gray-900 font-bold">
               <button 
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/generated-jingle')}
                 className="p-1 hover:text-[#0f3d2e] transition"
                 aria-label="Go back"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="text-base tracking-wide">generated jingle</span>
+              <span className="text-base tracking-wide">Change request</span>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -134,87 +139,59 @@ export default function GeneratedJingle() {
             </div>
           </div>
 
-          {/* Main Card */}
-          <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-gray-100 flex flex-col min-h-[500px]">
+          {/* Main Content Card */}
+          <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-gray-100 flex flex-col min-h-[550px]">
             
             <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Name of jingle</h1>
-              <div className="flex space-x-6 text-gray-400 font-semibold text-sm">
-                <span>variant 1</span>
-                <span>0:15</span>
-              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">Name of jingle</h1>
+              <p className="text-gray-500 font-semibold text-sm">Review the variant below and provide your feedback.</p>
             </div>
 
-            {/* Audio Player */}
-            <div className="border border-gray-200/80 rounded-2xl p-4 flex items-center justify-between mb-16 max-w-xl mx-auto w-full shadow-sm bg-white">
-              <button 
-                type="button"
-                onClick={() => triggerToast("Playing generated jingle")}
-                className="bg-[#0f3d2e] text-white rounded-full p-2.5 hover:bg-opacity-95 transition"
-                aria-label="Play audio"
-              >
-                <Play className="h-4 w-4 fill-white ml-0.5" />
-              </button>
+            <div className="max-w-2xl mx-auto w-full space-y-6">
               
-              {/* Simulated Waveform */}
-              <div className="flex items-center space-x-[2px] flex-1 mx-6 h-8 px-2 overflow-hidden justify-between">
-                {Array.from({ length: 42 }).map((_, i) => {
-                  const heights = [12, 18, 26, 15, 24, 8, 20, 28, 14, 22, 18, 10];
-                  const h = heights[i % heights.length];
-                  return (
-                    <div 
-                      key={i} 
-                      className="w-[3px] bg-[#0f3d2e] rounded-full transition-all" 
-                      style={{ height: `${h}px` }} 
-                    />
-                  );
-                })}
+              {/* Summary Box */}
+              <div className="border border-gray-200/80 rounded-2xl p-5 flex justify-between items-center shadow-sm bg-white">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm mb-0.5">Name of jingle</h3>
+                  <p className="text-gray-400 text-sm font-semibold">variant 1</p>
+                </div>
+                <div className="bg-[#f0f4f8] px-5 py-2.5 rounded-xl border border-gray-200/60 text-center">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Your rating</p>
+                  <p className="font-extrabold text-[#2f6136] text-sm mt-0.5">4 / 5</p>
+                </div>
               </div>
 
-              <span className="text-gray-400 font-semibold text-sm">0:15</span>
-            </div>
-
-            {/* Rating Section */}
-            <div className="flex flex-col items-center mb-16">
-              <h3 className="text-gray-900 font-bold mb-4 text-base">Rate jingle</h3>
-              <div className="flex space-x-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button 
-                    key={star} 
-                    type="button"
-                    onClick={() => {
-                      setRating(star);
-                      triggerToast(`Rated ${star} out of 5 stars`);
-                    }} 
-                    className="focus:outline-none transition-transform hover:scale-110"
-                    aria-label={`Rate ${star} stars`}
-                  >
-                    <svg className={`w-8 h-8 ${rating >= star ? 'text-[#0f3d2e]' : 'text-gray-300'}`} fill={rating >= star ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                  </button>
-                ))}
+              {/* Feedback Input Area */}
+              <div className="bg-[#f9fafb] border border-gray-200/80 rounded-2xl p-6 shadow-sm">
+                <label className="block text-sm font-bold text-gray-900 mb-3">What needs to change?</label>
+                <textarea 
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Provide your feedback , eg , change the tone ......."
+                  rows={4}
+                  className="w-full border border-gray-200 rounded-xl p-4 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#2f6136] resize-none shadow-sm"
+                ></textarea>
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-center items-center space-x-6 mt-auto pb-4">
-              <button 
-                type="button"
-                onClick={() => navigate('/ChangeRequest')}
-                className="border border-[#0f3d2e] text-[#0f3d2e] px-8 py-3.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition w-48 shadow-sm"
-              >
-                Request changes
-              </button>
-              <button 
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                className="bg-[#2f6136] text-white px-8 py-3.5 rounded-xl font-bold text-sm hover:bg-opacity-90 transition w-48 shadow-sm"
-              >
-                Approve
-              </button>
-            </div>
+              {/* Action Buttons */}
+              <div className="flex flex-col space-y-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={handleRegenerate}
+                  className="w-full bg-[#2f6136] text-white py-3.5 rounded-xl font-bold text-sm hover:bg-opacity-90 transition shadow-sm"
+                >
+                  Regenerate jingle
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full border border-red-300 text-red-500 py-3.5 rounded-xl font-bold text-sm hover:bg-red-50/50 transition"
+                >
+                  Cancel changes
+                </button>
+              </div>
 
+            </div>
           </div>
 
         </div>
