@@ -48,9 +48,15 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+    # Always allowed regardless of the CORS_ORIGINS env var, so the deployed
+    # frontend keeps working even if that env var isn't set on the host
+    # (e.g. Render dashboard not yet configured).
+    _ALWAYS_ALLOWED_ORIGINS = ["https://frontend-ecru-ten-18.vercel.app"]
+
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        configured = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return list(dict.fromkeys(configured + self._ALWAYS_ALLOWED_ORIGINS))
 
     @property
     def allowed_audio_extensions_list(self) -> list[str]:
