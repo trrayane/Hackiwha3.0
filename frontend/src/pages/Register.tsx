@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
+import { ApiError } from '../lib/api';
 
 export interface RegisterFormData {
+  name: string;
   email: string;
+  password: string;
+  confirmPassword: string;
 }
 
 interface RegisterProps {
-  onSubmit: (data: RegisterFormData) => void;
+  onSubmit: (data: RegisterFormData) => Promise<void>;
   onSwitchToLogin: () => void;
 }
 
 export default function Register({ onSubmit, onSwitchToLogin }: RegisterProps) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const colors = {
     backgroundLeft: '#FCFBF6',
@@ -25,13 +32,21 @@ export default function Register({ onSubmit, onSwitchToLogin }: RegisterProps) {
     textMuted: '#7E7E7A',
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
-    onSubmit({ email });
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ name, email, password, confirmPassword });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -65,9 +80,49 @@ export default function Register({ onSubmit, onSwitchToLogin }: RegisterProps) {
             Start managing your audio ads today.
           </p>
 
+          {error && (
+            <div style={{
+              backgroundColor: '#FDEDED',
+              border: '1px solid #D9383A',
+              color: '#D9383A',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              fontSize: '14px',
+              fontWeight: '600',
+              marginBottom: '20px'
+            }}>
+              {error}
+            </div>
+          )}
+
           {/* Form Content */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
+
+            {/* Input Element: Full Name */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Full name</label>
+              <input
+                type="text"
+                placeholder="Jane Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  height: '48px',
+                  backgroundColor: colors.inputBg,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '10px',
+                  padding: '0 16px',
+                  boxSizing: 'border-box',
+                  fontSize: '15px',
+                  color: colors.headings,
+                  outline: 'none',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
             {/* Input Element: Email */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Email</label>
@@ -146,6 +201,7 @@ export default function Register({ onSubmit, onSwitchToLogin }: RegisterProps) {
             {/* Core Action Button */}
             <button
               type="submit"
+              disabled={isSubmitting}
               style={{
                 width: '100%',
                 height: '48px',
@@ -155,12 +211,13 @@ export default function Register({ onSubmit, onSwitchToLogin }: RegisterProps) {
                 borderRadius: '10px',
                 fontSize: '16px',
                 fontWeight: '700',
-                cursor: 'pointer',
+                cursor: isSubmitting ? 'default' : 'pointer',
+                opacity: isSubmitting ? 0.7 : 1,
                 marginTop: '12px',
                 transition: 'background-color 0.15s ease'
               }}
             >
-              Sign Up
+              {isSubmitting ? 'Creating account...' : 'Sign Up'}
             </button>
           </form>
 

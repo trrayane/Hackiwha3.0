@@ -1,14 +1,29 @@
 import React from 'react';
 import { Sidebar } from '../components/Sidebar';
-import '../App.css'; 
+import '../App.css';
 import { ArrowLeft, Moon, Sun, Bell } from 'lucide-react';
+import { ApiError, type TargetAgeRange } from '../lib/api';
 
-export default function NewJingleStep2({ 
-  onNext, 
-  onBack 
-}: { 
-  onNext: () => void; 
-  onBack: () => void; 
+export interface Step2Data {
+  targetAgeRange: TargetAgeRange;
+  moodContext: string;
+}
+
+/** Maps the 0-100 slider position to the backend's 3-bucket enum — the
+ * slider UI has no real "13-24 / 25-40 / 41+" discrete stops, so split the
+ * range into thirds. */
+function sliderToAgeRange(value: number): TargetAgeRange {
+  if (value < 34) return '13-24';
+  if (value < 67) return '25-40';
+  return '41+';
+}
+
+export default function NewJingleStep2({
+  onNext,
+  onBack
+}: {
+  onNext: (data: Step2Data) => Promise<void>;
+  onBack: () => void;
 }) {
   const colors = {
     color: '#EDF7ED',
@@ -34,6 +49,20 @@ export default function NewJingleStep2({
   // Widget states
   const [ageRange, setAgeRange] = React.useState('50'); // Slider midpoint default
   const [moodContext, setMoodContext] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleNext = async () => {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onNext({ targetAgeRange: sliderToAgeRange(Number(ageRange)), moodContext });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div style={{ 
@@ -137,7 +166,20 @@ export default function NewJingleStep2({
 
           {/* DYNAMIC FORM CONTEXT ELEMENTS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '720px', width: '100%', margin: '20px auto 0 auto' }}>
-            
+            {error && (
+              <div style={{
+                backgroundColor: '#FDEDED',
+                border: '1px solid #D9383A',
+                color: '#D9383A',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+              }}>
+                {error}
+              </div>
+            )}
+
             {/* Widget 1: Age Range Slider Block */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Target Age range</label>
@@ -188,11 +230,12 @@ export default function NewJingleStep2({
             >
               Back
             </button>
-            <button 
-              onClick={onNext}
-              style={{ flex: 1, height: '52px', border: 'none', backgroundColor: colors.nextGreenButton, color: colors.white, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}
+            <button
+              onClick={handleNext}
+              disabled={isSubmitting}
+              style={{ flex: 1, height: '52px', border: 'none', backgroundColor: colors.nextGreenButton, color: colors.white, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: isSubmitting ? 'default' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
             >
-              Next
+              {isSubmitting ? 'Saving...' : 'Next'}
             </button>
           </div>
 

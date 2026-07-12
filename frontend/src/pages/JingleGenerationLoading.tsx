@@ -1,50 +1,65 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 
 interface JingleGenerationLoadingProps {
   onCancel: () => void;
   onComplete: () => void;
+  /** Fires the real (slow) generation request. Resolves once the backend is done. */
+  run: () => Promise<void>;
+  onError: (message: string) => void;
   platformName?: string;
 }
 
 export default function JingleGenerationLoading({
   onCancel,
   onComplete,
+  run,
+  onError,
   platformName = 'TikTok'
 }: JingleGenerationLoadingProps) {
   const [progress, setProgress] = useState(0);
+  const cancelledRef = useRef(false);
 
   // Dynamic status text matching the design phases
   let statusText = 'Analyzing brand tone...';
-  if (progress >= 80) {
+  if (progress >= 90) {
     statusText = 'Mixing final track...';
-  } else if (progress >= 50) {
+  } else if (progress >= 55) {
     statusText = `Adapting for ${platformName}...`;
-  } else if (progress >= 26) {
+  } else if (progress >= 25) {
     statusText = 'Composing jingle...';
   }
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prevProgress) => {
-        if (prevProgress >= 100) {
-          clearInterval(timer);
-          setTimeout(() => {
-            onComplete();
-          }, 400); // Small delay for visual completion
-          return 100;
-        }
-        
-        // Simulating matching steps or incrementing smoothly
-        if (prevProgress === 0) return 26;
-        if (prevProgress === 26) return 50;
-        if (prevProgress === 50) return 80;
-        return prevProgress + 4; // Fast increment to 100% after 80%
-      });
-    }, 1500); // 1.5 seconds per phase step
+    cancelledRef.current = false;
 
-    return () => clearInterval(timer);
-  }, [onComplete]);
+    // Creeps toward 90% while the real request is in flight (generation takes
+    // 1-3 minutes on CPU) — the last 10% only fills once the call resolves.
+    const progressTimer = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? prev : prev + 2));
+    }, 1200);
+
+    run()
+      .then(() => {
+        if (cancelledRef.current) return;
+        clearInterval(progressTimer);
+        setProgress(100);
+        setTimeout(() => {
+          if (!cancelledRef.current) onComplete();
+        }, 400);
+      })
+      .catch((err) => {
+        if (cancelledRef.current) return;
+        clearInterval(progressTimer);
+        onError(err instanceof Error ? err.message : 'generation failed');
+      });
+
+    return () => {
+      cancelledRef.current = true;
+      clearInterval(progressTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Audio equalizer bars matching heights from your design
   const bars = [32, 22, 16, 11, 8, 11, 16, 22, 30];
@@ -138,7 +153,10 @@ export default function JingleGenerationLoading({
 
       {/* CANCEL GENERATION ACTION TRIGGER BUTTON */}
       <button
-        onClick={onCancel}
+        onClick={() => {
+          cancelledRef.current = true;
+          onCancel();
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',

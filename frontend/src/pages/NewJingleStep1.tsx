@@ -1,10 +1,16 @@
 import React from 'react';
 import { Sidebar } from '../components/Sidebar';
-import '../App.css'; 
+import '../App.css';
 import { ArrowLeft, Moon, Sun, Bell } from 'lucide-react';
+import { ApiError } from '../lib/api';
 
-// 1. Added an inline type definition to accept the onNext function prop cleanly
-export default function NewJingleStep1({ onNext }: { onNext: () => void }) {
+export interface Step1Data {
+  brandName: string;
+  brandTone: string;
+  brandDescription: string;
+}
+
+export default function NewJingleStep1({ onNext }: { onNext: (data: Step1Data) => Promise<void> }) {
   const colors = {
     color: '#EDF7ED',
     white: '#FFFFFF',
@@ -29,6 +35,24 @@ export default function NewJingleStep1({ onNext }: { onNext: () => void }) {
   const [brandName, setBrandName] = React.useState('');
   const [brandTone, setBrandTone] = React.useState('');
   const [brandDescription, setBrandDescription] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleNext = async () => {
+    if (!brandName.trim() || !brandTone.trim()) {
+      setError('Brand name and brand tone are required.');
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onNext({ brandName, brandTone, brandDescription });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div style={{ 
@@ -123,6 +147,19 @@ export default function NewJingleStep1({ onNext }: { onNext: () => void }) {
 
           {/* INPUT FORM SECTIONS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px', width: '100%', margin: '20px auto 0 auto' }}>
+            {error && (
+              <div style={{
+                backgroundColor: '#FDEDED',
+                border: '1px solid #D9383A',
+                color: '#D9383A',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+              }}>
+                {error}
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Brand name</label>
               <input 
@@ -162,12 +199,12 @@ export default function NewJingleStep1({ onNext }: { onNext: () => void }) {
             <button style={{ flex: 1, height: '52px', border: '1px solid ' + colors.headings, backgroundColor: colors.white, color: colors.headings, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}>
               Cancel
             </button>
-            {/* 2. Tied the onNext function directly to the dynamic Approve action handler */}
-            <button 
-              onClick={onNext}
-              style={{ flex: 1, height: '52px', border: 'none', backgroundColor: colors.primaryAccent, color: colors.white, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}
+            <button
+              onClick={handleNext}
+              disabled={isSubmitting}
+              style={{ flex: 1, height: '52px', border: 'none', backgroundColor: colors.primaryAccent, color: colors.white, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: isSubmitting ? 'default' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
             >
-              Next
+              {isSubmitting ? 'Creating...' : 'Next'}
             </button>
           </div>
 

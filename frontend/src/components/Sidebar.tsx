@@ -1,17 +1,35 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // <-- 1. IMPORT THIS
 import { LayoutDashboard, SquarePlus, Folder, Settings } from 'lucide-react';
+import { useAuth } from '../lib/AuthContext';
+import * as api from '../lib/api';
+import logo from '../assets/logo.png';
 
-export const Sidebar = ({ 
-  activeTab, 
-  setActiveTab, 
-  colors 
-}: { 
-  activeTab: string; 
-  setActiveTab: (tab: string) => void; 
-  colors: any; 
+export const Sidebar = ({
+  activeTab,
+  setActiveTab,
+  colors
+}: {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  colors: any;
 }) => {
   const navigate = useNavigate(); // <-- 2. INITIALIZE THIS
+  const { logout } = useAuth();
+
+  const [quota, setQuota] = React.useState<{ used: number; total: number } | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    api.dashboardSummary()
+      .then((summary) => {
+        if (!cancelled) setQuota({ used: summary.jingles_used, total: summary.jingle_quota });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const usedPct = quota && quota.total > 0 ? Math.min(100, (quota.used / quota.total) * 100) : 0;
 
    const navItems: { id: string; label: string; icon: any; path: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -35,7 +53,12 @@ export const Sidebar = ({
     }}>
       <div>
         {/* Logo Container */}
-        <div style={{ width: '135px', height: '44px', backgroundColor: colors.primaryAccent, borderRadius: '14px', marginBottom: '40px' }}></div>
+        <img
+          src={logo}
+          alt="Logo"
+          onClick={() => { setActiveTab('dashboard'); navigate('/dashboard'); }}
+          style={{ height: '44px', marginBottom: '40px', cursor: 'pointer' }}
+        />
         
         {/* Navigation List */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -77,15 +100,15 @@ export const Sidebar = ({
         <div style={{ border: `1px solid ${colors.color}`, backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '20px 18px', marginBottom: '16px', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: colors.headings }}>
             <span>Usage</span>
-            <span style={{ color: colors.primaryAccent }}>2/5</span>
+            <span style={{ color: colors.primaryAccent }}>{quota ? `${quota.used}/${quota.total}` : '—'}</span>
           </div>
           <div style={{ width: '100%', height: '8px', backgroundColor: colors.backgroundLightMode, borderRadius: '4px' }}>
-            <div style={{ width: '40%', height: '100%', backgroundColor: colors.primaryAccent, borderRadius: '4px' }}></div>
+            <div style={{ width: `${usedPct}%`, height: '100%', backgroundColor: colors.primaryAccent, borderRadius: '4px' }}></div>
           </div>
         </div>
 
-        <button 
-          onClick={() => navigate('/login')} // <-- 5. ALSO REDIRECTS LOGOUT
+        <button
+          onClick={() => { logout(); navigate('/login'); }} // <-- 5. ALSO REDIRECTS LOGOUT
           style={{ width: '100%', border: `1px solid ${colors.dangerRed}`, backgroundColor: '#FFFFFF', color: colors.dangerRed, borderRadius: '12px', padding: '14px 0', fontWeight: '700', fontSize: '15px', cursor: 'pointer' }}
         >
           Log Out

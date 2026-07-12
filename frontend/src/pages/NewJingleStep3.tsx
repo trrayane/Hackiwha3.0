@@ -1,25 +1,36 @@
 import React from 'react';
 import { Sidebar } from '../components/Sidebar';
-import '../App.css'; 
-import { 
-  ArrowLeft, 
-  Moon, 
-  Sun, 
-  Bell, 
-  Music, 
-  Camera, 
-  AudioLines, 
-  Video, 
-  Radio, 
-  ShoppingBag 
+import '../App.css';
+import {
+  ArrowLeft,
+  Moon,
+  Sun,
+  Bell,
+  Music,
+  Camera,
+  AudioLines,
+  Video,
+  Radio,
+  ShoppingBag
 } from 'lucide-react';
+import { ApiError, type Platform } from '../lib/api';
 
-export default function NewJingleStep3({ 
-  onNext, 
-  onBack 
-}: { 
-  onNext: () => void; 
-  onBack: () => void; 
+// Maps each display card to the backend Platform enum value.
+const PLATFORM_VALUES: Record<string, Platform> = {
+  TikTok: 'tiktok',
+  'Instagram reels': 'instagram_reels',
+  'Spotify ads': 'spotify_ads',
+  Youtube: 'youtube',
+  'Classic radio': 'classic_radio',
+  'In store': 'in_store',
+};
+
+export default function NewJingleStep3({
+  onNext,
+  onBack
+}: {
+  onNext: (platform: Platform) => Promise<void>;
+  onBack: () => void;
 }) {
   const colors = {
     color: '#EDF7ED',
@@ -44,6 +55,20 @@ export default function NewJingleStep3({
   
   // State to track which platform grid item is clicked/active
   const [selectedPlatform, setSelectedPlatform] = React.useState('TikTok');
+  const [error, setError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleNext = async () => {
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onNext(PLATFORM_VALUES[selectedPlatform]);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const platforms = [
     { id: 'TikTok', name: 'TikTok', duration: '6 - 9 sec', icon: <Music size={20} /> },
@@ -156,8 +181,21 @@ export default function NewJingleStep3({
 
           {/* PLATFORM GRID SELECTION AREA */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '720px', width: '100%', margin: '20px auto 0 auto' }}>
+            {error && (
+              <div style={{
+                backgroundColor: '#FDEDED',
+                border: '1px solid #D9383A',
+                color: '#D9383A',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+              }}>
+                {error}
+              </div>
+            )}
             <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Select Target Platform</label>
-            
+
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(3, 1fr)', 
@@ -217,11 +255,12 @@ export default function NewJingleStep3({
             >
               Back
             </button>
-            <button 
-              onClick={onNext}
-              style={{ flex: 1, height: '52px', border: 'none', backgroundColor: colors.nextGreenButton, color: colors.white, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: 'pointer' }}
+            <button
+              onClick={handleNext}
+              disabled={isSubmitting}
+              style={{ flex: 1, height: '52px', border: 'none', backgroundColor: colors.nextGreenButton, color: colors.white, borderRadius: '12px', fontWeight: '700', fontSize: '16px', cursor: isSubmitting ? 'default' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
             >
-              Next
+              {isSubmitting ? 'Saving...' : 'Next'}
             </button>
           </div>
 

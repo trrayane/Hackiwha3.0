@@ -1,17 +1,39 @@
 import React, { useState } from 'react';
+import { ApiError, forgotPassword } from '../lib/api';
 
 export interface LoginFormData {
   email: string;
+  password: string;
 }
 
 interface LoginProps {
-  onSubmit: (data: LoginFormData) => void;
+  onSubmit: (data: LoginFormData) => Promise<void>;
   onSwitchToRegister: () => void;
 }
 
 export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMessage, setForgotMessage] = useState<string | null>(null);
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotSubmitting(true);
+    setForgotMessage(null);
+    try {
+      const res = await forgotPassword(forgotEmail);
+      setForgotMessage(res.message);
+    } catch (err) {
+      setForgotMessage(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setForgotSubmitting(false);
+    }
+  };
 
   const colors = {
     backgroundLeft: '#FCFBF6',
@@ -24,34 +46,42 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
     textMuted: '#7E7E7A',
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ email });
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ email, password });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Login failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      minHeight: '100vh', 
-      width: '100vw', 
-      backgroundColor: colors.backgroundLeft, 
+    <div style={{
+      display: 'flex',
+      minHeight: '100vh',
+      width: '100vw',
+      backgroundColor: colors.backgroundLeft,
       fontFamily: '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       margin: 0,
       padding: 0,
       boxSizing: 'border-box',
       overflow: 'hidden'
     }}>
-      
+
       {/* LEFT COLUMN: FORM INTERFACE */}
-      <div style={{ 
-        flex: '1 1 45%', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        padding: '40px' 
+      <div style={{
+        flex: '1 1 45%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px'
       }}>
         <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column' }}>
-          
+
           {/* Header Typography */}
           <h1 style={{ fontSize: '36px', fontWeight: '700', color: colors.headings, margin: '0 0 12px 0', letterSpacing: '-0.5px' }}>
             Welcome back
@@ -60,9 +90,24 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
             Enter your details to access your dashboard.
           </p>
 
+          {error && (
+            <div style={{
+              backgroundColor: '#FDEDED',
+              border: '1px solid #D9383A',
+              color: '#D9383A',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              fontSize: '14px',
+              fontWeight: '600',
+              marginBottom: '20px'
+            }}>
+              {error}
+            </div>
+          )}
+
           {/* Form Content */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
+
             {/* Input Element: Email */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Email</label>
@@ -111,11 +156,13 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
                   fontFamily: 'inherit'
                 }}
               />
-              <span style={{ 
-                alignSelf: 'flex-end', 
-                fontSize: '14px', 
-                fontWeight: '700', 
-                color: colors.primaryAccent, 
+              <span
+                onClick={() => { setShowForgotPassword(true); setForgotMessage(null); setForgotEmail(email); }}
+                style={{
+                alignSelf: 'flex-end',
+                fontSize: '14px',
+                fontWeight: '700',
+                color: colors.primaryAccent,
                 cursor: 'pointer',
                 marginTop: '6px'
               }}>
@@ -123,9 +170,68 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
               </span>
             </div>
 
+            {showForgotPassword && (
+              <div style={{
+                backgroundColor: colors.inputBg,
+                border: `1px solid ${colors.border}`,
+                borderRadius: '10px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: colors.headings }}>
+                  Enter your email and we'll send you a reset link.
+                </span>
+                {forgotMessage && (
+                  <span style={{ fontSize: '13px', color: colors.primaryAccent, fontWeight: '600' }}>{forgotMessage}</span>
+                )}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="email"
+                    placeholder="name@gmail.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    style={{
+                      flexGrow: 1,
+                      height: '40px',
+                      backgroundColor: colors.white,
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: '8px',
+                      padding: '0 12px',
+                      fontSize: '14px',
+                      color: colors.headings,
+                      outline: 'none',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={forgotSubmitting || !forgotEmail}
+                    onClick={handleForgotPassword}
+                    style={{
+                      height: '40px',
+                      padding: '0 16px',
+                      backgroundColor: colors.primaryAccent,
+                      color: colors.white,
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: forgotSubmitting ? 'default' : 'pointer',
+                      opacity: forgotSubmitting ? 0.7 : 1
+                    }}
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Core Action Button */}
             <button
               type="submit"
+              disabled={isSubmitting}
               style={{
                 width: '100%',
                 height: '48px',
@@ -135,21 +241,22 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
                 borderRadius: '10px',
                 fontSize: '16px',
                 fontWeight: '700',
-                cursor: 'pointer',
+                cursor: isSubmitting ? 'default' : 'pointer',
+                opacity: isSubmitting ? 0.7 : 1,
                 marginTop: '12px',
                 transition: 'background-color 0.15s ease'
               }}
             >
-              Sign In
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
           {/* Alternative Separation Bar */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            margin: '24px 0', 
-            color: colors.textMuted, 
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            margin: '24px 0',
+            color: colors.textMuted,
             fontSize: '14px',
             fontWeight: '600'
           }}>
@@ -189,7 +296,7 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
           {/* Switch flow link */}
           <div style={{ textAlign: 'center', marginTop: '36px', fontSize: '14px', fontWeight: '700', color: colors.headings }}>
             Don't Have an Account ?{' '}
-            <span 
+            <span
               onClick={onSwitchToRegister}
               style={{ color: colors.primaryAccent, cursor: 'pointer', textDecoration: 'underline' }}
             >
@@ -201,14 +308,14 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
       </div>
 
       {/* RIGHT COLUMN: FULL HEIGHT FLUSH AD PANEL */}
-      <div style={{ 
-        flex: '1 1 55%', 
+      <div style={{
+        flex: '1 1 55%',
         padding: 0, // Removed wrapper padding to make it flush
         boxSizing: 'border-box',
         display: 'flex',
         height: '100vh' // Explicitly occupies exact window height
       }}>
-        <div style={{ 
+        <div style={{
           flexGrow: 1,
           background: 'linear-gradient(145deg, #2B6630 0%, #68B85C 50%, #90DD6A 100%)',
           borderRadius: '40px 0 0 40px', // Matches your exact image: rounded left edge, square right edge
@@ -222,7 +329,7 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
           color: colors.white,
           textAlign: 'center'
         }}>
-          
+
           {/* ABSTRACT VECTOR AUDIO WAVE BACKGROUND GRAPHIC */}
           <div style={{
             position: 'absolute',
@@ -248,20 +355,20 @@ export default function Login({ onSubmit, onSwitchToRegister }: LoginProps) {
 
           {/* FRONT TEXT OVERLAYS */}
           <div style={{ position: 'relative', zIndex: 2, maxWidth: '540px' }}>
-            <h2 style={{ 
-              fontSize: '56px', 
-              fontWeight: '700', 
-              lineHeight: '1.15', 
-              margin: '0 0 24px 0', 
-              letterSpacing: '-1px' 
+            <h2 style={{
+              fontSize: '56px',
+              fontWeight: '700',
+              lineHeight: '1.15',
+              margin: '0 0 24px 0',
+              letterSpacing: '-1px'
             }}>
               Ads that fit their moment.
             </h2>
-            <p style={{ 
-              fontSize: '20px', 
-              fontWeight: '500', 
-              lineHeight: '1.5', 
-              opacity: 0.9, 
+            <p style={{
+              fontSize: '20px',
+              fontWeight: '500',
+              lineHeight: '1.5',
+              opacity: 0.9,
               margin: 0,
               padding: '0 20px'
             }}>

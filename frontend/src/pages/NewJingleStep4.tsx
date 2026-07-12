@@ -1,23 +1,50 @@
 import React from 'react';
 import { Sidebar } from '../components/Sidebar';
 import '../App.css';
-// 1. Corrected case matching standard component exports
-import JingleGenerationLoading from './JingleGenerationLoading'; 
-import { 
-  ArrowLeft, 
-  Moon, 
-  Sun, 
-  Bell, 
-  CloudUpload 
+import JingleGenerationLoading from './JingleGenerationLoading';
+import {
+  ArrowLeft,
+  Moon,
+  Sun,
+  Bell,
+  CloudUpload,
+  ChevronDown,
+  Play,
+  Square,
+  Loader2
 } from 'lucide-react';
+import {
+  GEMINI_VOICES,
+  LANGUAGE_OPTIONS,
+  getVoicePreview,
+  uploadReferenceAudio,
+  replaceReferenceAudio,
+  deleteReferenceAudio,
+  getReferenceAudio,
+} from '../lib/api';
+import type { Language, ReferenceAudioOut } from '../lib/api';
 
-export default function NewJingleStep4({ 
-  onSubmit, 
-  onBack 
-}: { 
-  // 2. Fixed the TypeScript function signature error
-  onSubmit: () => void; 
-  onBack: () => void; 
+export interface Step4Data {
+  soundDescription: string;
+  voiceEnabled: boolean;
+  voiceGender: 'male' | 'female';
+  voiceName: string | null;
+  language: Language;
+}
+
+export default function NewJingleStep4({
+  jingleId,
+  onSubmit,
+  onBack,
+  onComplete,
+}: {
+  /** Needed to attach/replace the reference audio sample on this jingle. */
+  jingleId: string | null;
+  /** Saves creative direction + kicks off the real (slow, 1-3min) generation call. */
+  onSubmit: (data: Step4Data) => Promise<void>;
+  onBack: () => void;
+  /** Navigates away once generation has actually completed. */
+  onComplete: () => void;
 }) {
   const colors = {
     color: '#EDF7ED',
@@ -42,18 +69,87 @@ export default function NewJingleStep4({
   
   // Widget states
   const [soundDescription, setSoundDescription] = React.useState('');
-  const [voiceToggle, setVoiceToggle] = React.useState('in'); 
-  
-  // 3. Added loading intercept state
+  const [voiceToggle, setVoiceToggle] = React.useState('in');
+  const [voiceName, setVoiceName] = React.useState('');
+  const [voiceGender, setVoiceGender] = React.useState<'male' | 'female'>('male');
+  const [language, setLanguage] = React.useState<Language>('ar-darija');
+  const [error, setError] = React.useState<string | null>(null);
+  const [voiceDropdownOpen, setVoiceDropdownOpen] = React.useState(false);
+  const voiceDropdownRef = React.useRef<HTMLDivElement | null>(null);
+  const [loadingPreview, setLoadingPreview] = React.useState<string | null>(null);
+  const [playingPreview, setPlayingPreview] = React.useState<string | null>(null);
+  const previewAudioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  const stopPreview = React.useCallback(() => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    setPlayingPreview(null);
+  }, []);
+
+  const handlePreview = React.useCallback(async (name: string, lang: Language) => {
+    if (playingPreview === name) {
+      stopPreview();
+      return;
+    }
+    stopPreview();
+    setLoadingPreview(name);
+    try {
+      const { audio_url } = await getVoicePreview(name, lang);
+      const audio = new Audio(audio_url);
+      previewAudioRef.current = audio;
+      audio.onended = () => setPlayingPreview(null);
+      await audio.play();
+      setPlayingPreview(name);
+    } catch {
+      // silently ignore — preview is a nice-to-have, not a blocking action
+    } finally {
+      setLoadingPreview(null);
+    }
+  }, [playingPreview, stopPreview]);
+
+  React.useEffect(() => () => stopPreview(), [stopPreview]);
+
+  React.useEffect(() => {
+    if (!voiceDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (voiceDropdownRef.current && !voiceDropdownRef.current.contains(e.target as Node)) {
+        setVoiceDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [voiceDropdownOpen]);
+
+  // Loading intercept state — true while the real (slow) generation call is in flight.
   const [isGenerating, setIsGenerating] = React.useState(false);
 
-  // If the user hits generate, show the waiting loading screen instead!
+  const handleGenerate = () => setIsGenerating(true);
+
+  // While generating, run the real API call and let the loading screen
+  // animate for however long it actually takes (1-3 min on CPU) rather than
+  // a fixed fake timer.
   if (isGenerating) {
     return (
-      <JingleGenerationLoading 
-        onCancel={() => setIsGenerating(false)} 
-        onComplete={onSubmit} // Fires the navigation after finishing 100%
-        platformName="TikTok" 
+      <JingleGenerationLoading
+        onCancel={() => setIsGenerating(false)}
+        run={() => onSubmit({
+          soundDescription,
+          voiceEnabled: voiceToggle === 'in',
+          voiceGender,
+          voiceName: voiceName || null,
+          language,
+        })}
+        onComplete={() => {
+          setIsGenerating(false);
+          onComplete();
+        }}
+        onError={(message) => {
+          setIsGenerating(false);
+          setError(message);
+        }}
+        platformName="TikTok"
       />
     );
   }
@@ -151,7 +247,20 @@ export default function NewJingleStep4({
 
           {/* DYNAMIC FORM CONTEXT TARGET ELEMENTS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '720px', width: '100%', margin: '20px auto 0 auto' }}>
-            
+            {error && (
+              <div style={{
+                backgroundColor: '#FDEDED',
+                border: '1px solid #D9383A',
+                color: '#D9383A',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+              }}>
+                {error}
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Describe Your Sound (Optional)</label>
               <textarea 
@@ -164,46 +273,265 @@ export default function NewJingleStep4({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Voice</label>
+              <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>
+                Voice Style
+              </label>
               <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
-                <button 
+                <button
                   type="button"
                   onClick={() => setVoiceToggle('in')}
                   style={{
                     flex: 1,
                     height: '50px',
                     borderRadius: '12px',
-                    border: '1px solid ' + colors.border,
-                    backgroundColor: voiceToggle === 'in' ? colors.white : 'transparent',
-                    color: colors.headings,
+                    border: '1px solid ' + (voiceToggle === 'in' ? colors.primaryAccent : colors.border),
+                    backgroundColor: voiceToggle === 'in' ? colors.primaryAccentlight : 'transparent',
+                    color: voiceToggle === 'in' ? colors.primaryAccent : colors.headings,
                     fontWeight: '700',
                     fontSize: '14px',
                     cursor: 'pointer',
-                    boxShadow: voiceToggle === 'in' ? '0px 2px 4px rgba(0,0,0,0.03)' : 'none'
+                    boxShadow: voiceToggle === 'in' ? '0px 2px 4px rgba(0,0,0,0.03)' : 'none',
+                    transition: 'all 0.15s ease'
                   }}
                 >
-                  Voice in
+                  Sung
                 </button>
-                <button 
+                <button
                   type="button"
                   onClick={() => setVoiceToggle('off')}
                   style={{
                     flex: 1,
                     height: '50px',
                     borderRadius: '12px',
-                    border: '1px solid ' + colors.border,
-                    backgroundColor: voiceToggle === 'off' ? colors.white : 'transparent',
-                    color: colors.headings,
+                    border: '1px solid ' + (voiceToggle === 'off' ? colors.primaryAccent : colors.border),
+                    backgroundColor: voiceToggle === 'off' ? colors.primaryAccentlight : 'transparent',
+                    color: voiceToggle === 'off' ? colors.primaryAccent : colors.headings,
                     fontWeight: '700',
                     fontSize: '14px',
                     cursor: 'pointer',
-                    boxShadow: voiceToggle === 'off' ? '0px 2px 4px rgba(0,0,0,0.03)' : 'none'
+                    boxShadow: voiceToggle === 'off' ? '0px 2px 4px rgba(0,0,0,0.03)' : 'none',
+                    transition: 'all 0.15s ease'
                   }}
                 >
-                  Voice off
+                  Spoken
                 </button>
               </div>
             </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Voice Language</label>
+              <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setLanguage(opt.value)}
+                    style={{
+                      flex: 1,
+                      height: '50px',
+                      borderRadius: '12px',
+                      border: '1px solid ' + (language === opt.value ? colors.primaryAccent : colors.border),
+                      backgroundColor: language === opt.value ? colors.primaryAccentlight : 'transparent',
+                      color: language === opt.value ? colors.primaryAccent : colors.headings,
+                      fontWeight: '700',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      boxShadow: language === opt.value ? '0px 2px 4px rgba(0,0,0,0.03)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Voice Gender</label>
+                  <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVoiceGender('male');
+                        if (voiceName && !GEMINI_VOICES.find((v) => v.name === voiceName && v.gender === 'male')) setVoiceName('');
+                      }}
+                      style={{
+                        flex: 1,
+                        height: '50px',
+                        borderRadius: '12px',
+                        border: '1px solid ' + (voiceGender === 'male' ? colors.primaryAccent : colors.border),
+                        backgroundColor: voiceGender === 'male' ? colors.primaryAccentlight : 'transparent',
+                        color: voiceGender === 'male' ? colors.primaryAccent : colors.headings,
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        boxShadow: voiceGender === 'male' ? '0px 2px 4px rgba(0,0,0,0.03)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      Male
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVoiceGender('female');
+                        if (voiceName && !GEMINI_VOICES.find((v) => v.name === voiceName && v.gender === 'female')) setVoiceName('');
+                      }}
+                      style={{
+                        flex: 1,
+                        height: '50px',
+                        borderRadius: '12px',
+                        border: '1px solid ' + (voiceGender === 'female' ? colors.primaryAccent : colors.border),
+                        backgroundColor: voiceGender === 'female' ? colors.primaryAccentlight : 'transparent',
+                        color: voiceGender === 'female' ? colors.primaryAccent : colors.headings,
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        boxShadow: voiceGender === 'female' ? '0px 2px 4px rgba(0,0,0,0.03)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      Female
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} ref={voiceDropdownRef}>
+                  <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>
+                    Voice Preset
+                  </label>
+
+                  <div style={{ position: 'relative' }}>
+                    {/* DROPDOWN TRIGGER */}
+                    <button
+                      type="button"
+                      onClick={() => setVoiceDropdownOpen((v) => !v)}
+                      style={{
+                        width: '100%',
+                        height: '52px',
+                        borderRadius: '12px',
+                        border: '1px solid ' + (voiceDropdownOpen ? colors.primaryAccent : colors.border),
+                        backgroundColor: colors.white,
+                        color: colors.headings,
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0 18px',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>{voiceName || 'Auto (best match for style)'}</span>
+                      <ChevronDown
+                        size={18}
+                        color={colors.secondaryText}
+                        style={{ transform: voiceDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}
+                      />
+                    </button>
+
+                    {/* SCROLLABLE VOICE LIST */}
+                    {voiceDropdownOpen && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 6px)',
+                        left: 0,
+                        right: 0,
+                        maxHeight: '280px',
+                        overflowY: 'auto',
+                        backgroundColor: colors.white,
+                        border: '1px solid ' + colors.border,
+                        borderRadius: '12px',
+                        boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
+                        zIndex: 20,
+                        padding: '6px'
+                      }}>
+                        <button
+                          type="button"
+                          onClick={() => { setVoiceName(''); setVoiceDropdownOpen(false); }}
+                          style={{
+                            width: '100%',
+                            height: '40px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            backgroundColor: voiceName === '' ? colors.primaryAccentlight : 'transparent',
+                            color: voiceName === '' ? colors.primaryAccent : colors.secondaryText,
+                            fontWeight: '700',
+                            fontSize: '13px',
+                            textAlign: 'left',
+                            padding: '0 14px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Auto (best match for style)
+                        </button>
+                        {GEMINI_VOICES.filter((v) => v.gender === voiceGender).map((v) => (
+                          <div
+                            key={v.name}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              borderRadius: '8px',
+                              backgroundColor: voiceName === v.name ? colors.primaryAccentlight : 'transparent',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handlePreview(v.name, language); }}
+                              title="Play preview"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                flexShrink: 0,
+                                marginLeft: '4px',
+                                borderRadius: '50%',
+                                border: 'none',
+                                backgroundColor: colors.white,
+                                color: colors.primaryAccent,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {loadingPreview === v.name ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : playingPreview === v.name ? (
+                                <Square size={12} fill="currentColor" />
+                              ) : (
+                                <Play size={14} fill="currentColor" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setVoiceName(v.name); setVoiceDropdownOpen(false); }}
+                              style={{
+                                flex: 1,
+                                height: '40px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                color: voiceName === v.name ? colors.primaryAccent : colors.headings,
+                                fontWeight: '700',
+                                fontSize: '13px',
+                                textAlign: 'left',
+                                padding: '0 14px 0 4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {v.name}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+            </>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '15px', fontWeight: '700', color: colors.headings }}>Reference Audio</label>

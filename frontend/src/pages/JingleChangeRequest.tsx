@@ -9,12 +9,14 @@ import {
 } from 'lucide-react';
 
 interface JingleChangeRequestProps {
+  jingleName: string;
+  rating: number | null;
   onBack: () => void;
   onCancel: () => void;
   onRegenerate: (feedback: string) => void;
 }
 
-export default function JingleChangeRequest({ onBack, onCancel, onRegenerate }: JingleChangeRequestProps) {
+export default function JingleChangeRequest({ jingleName, rating, onBack, onCancel, onRegenerate }: JingleChangeRequestProps) {
   const colors = {
     color: '#EDF7ED',
     white: '#FFFFFF',
@@ -101,7 +103,7 @@ export default function JingleChangeRequest({ onBack, onCancel, onRegenerate }: 
           {/* FIXED: Moved this header section outside the centered container so it aligns to the far left */}
           <div style={{ marginBottom: '40px', textAlign: 'left' }}>
             <h1 style={{ fontSize: '36px', color: colors.headings, margin: '0 0 10px 0', fontWeight: '700', letterSpacing: '-0.5px' }}>
-              Name of jingle
+              {jingleName || 'Your jingle'}
             </h1>
             <p style={{ fontSize: '20px', color: colors.secondaryText, margin: 0, fontWeight: '500' }}>
               Review the variant below and provide your feedback.
@@ -124,7 +126,7 @@ export default function JingleChangeRequest({ onBack, onCancel, onRegenerate }: 
               boxSizing: 'border-box'
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '18px', fontWeight: '700', color: colors.headings }}>Name of jingle</span>
+                <span style={{ fontSize: '18px', fontWeight: '700', color: colors.headings }}>{jingleName || 'Your jingle'}</span>
                 <span style={{ fontSize: '14px', fontWeight: '500', color: '#7E7E7A' }}>variant 1</span>
               </div>
 
@@ -137,7 +139,7 @@ export default function JingleChangeRequest({ onBack, onCancel, onRegenerate }: 
                 backgroundColor: colors.white
               }}>
                 <div style={{ fontSize: '11px', color: '#7E7E7A', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>Your rating</div>
-                <div style={{ fontSize: '16px', fontWeight: '700', color: colors.primaryAccent }}>4 / 5</div>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: colors.primaryAccent }}>{rating != null ? `${rating} / 5` : 'Not rated'}</div>
               </div>
             </div>
 

@@ -10,6 +10,7 @@ import step2Card from '../assets/step2-card.png';
 import step3Card from '../assets/step3-card.png';
 import heroVideoWebm from '../assets/hero-character.webm';
 import heroVideoMov from '../assets/hero-character.mov';
+import logo from '../assets/logo.png';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -90,20 +91,14 @@ export default function LandingPage() {
           boxSizing: 'border-box',
           position: 'relative'
         }}>
-          {/* Left Side: Brand Name Only */}
+          {/* Left Side: Brand Logo */}
           <div style={{ display: 'flex', alignItems: 'center', lineHeight: '1' }}>
-            <span 
+            <img
+              src={logo}
+              alt="Logo"
               onClick={() => navigate('/')}
-              style={{ 
-                fontWeight: '800', 
-                fontSize: '22px', 
-                color: '#282900', 
-                letterSpacing: '-0.5px',
-                cursor: 'pointer'
-              }}
-            >
-              Name
-            </span>
+              style={{ height: '60px', cursor: 'pointer' }}
+            />
           </div>
 
           {/* Middle Center Section: Completely Centered Navigation Links */}
