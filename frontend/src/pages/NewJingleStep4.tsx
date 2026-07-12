@@ -13,16 +13,8 @@ import {
   Square,
   Loader2
 } from 'lucide-react';
-import {
-  GEMINI_VOICES,
-  LANGUAGE_OPTIONS,
-  getVoicePreview,
-  uploadReferenceAudio,
-  replaceReferenceAudio,
-  deleteReferenceAudio,
-  getReferenceAudio,
-} from '../lib/api';
-import type { Language, ReferenceAudioOut } from '../lib/api';
+import { GEMINI_VOICES, LANGUAGE_OPTIONS, getVoicePreview } from '../lib/api';
+import type { Language } from '../lib/api';
 
 export interface Step4Data {
   soundDescription: string;
@@ -33,7 +25,7 @@ export interface Step4Data {
 }
 
 export default function NewJingleStep4({
-  jingleId,
+  jingleId: _jingleId,
   onSubmit,
   onBack,
   onComplete,
@@ -124,8 +116,6 @@ export default function NewJingleStep4({
 
   // Loading intercept state — true while the real (slow) generation call is in flight.
   const [isGenerating, setIsGenerating] = React.useState(false);
-
-  const handleGenerate = () => setIsGenerating(true);
 
   // While generating, run the real API call and let the loading screen
   // animate for however long it actually takes (1-3 min on CPU) rather than

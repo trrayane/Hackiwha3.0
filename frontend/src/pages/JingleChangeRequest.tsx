@@ -1,6 +1,6 @@
 import { Sidebar } from '../components/Sidebar';
 import '../App.css';
-import react, { useState } from 'react';
+import { useState } from 'react';
 import { 
   ArrowLeft, 
   Moon, 

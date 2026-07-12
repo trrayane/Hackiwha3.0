@@ -1,5 +1,5 @@
-import React from "react";
-import StatusBadge from "./Statusbadge";
+
+import { StatusBadge } from "./Statusbadge";
 import type { Jingle } from "../types";
 
 export interface JinglesTableProps {

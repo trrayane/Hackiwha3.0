@@ -123,6 +123,7 @@ function AppRoutes() {
         element={
           <RequireAuth>
             <NewJingleStep4
+              jingleId={draft.jingleId}
               onBack={() => navigate("/NewJingle3")}
               onSubmit={async (data) => {
                 if (!draft.jingleId) throw new Error("no jingle in progress");

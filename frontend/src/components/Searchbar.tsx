@@ -1,4 +1,4 @@
-import React from "react";
+
 import type { ChangeEvent } from "react";
 import { Search, Sun, Moon, Bell } from "lucide-react";
 
