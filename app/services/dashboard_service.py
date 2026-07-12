@@ -37,8 +37,11 @@ class DashboardService:
         self.users = UserRepository(session)
 
     async def summary(self, user_id: uuid.UUID) -> DashboardSummary:
-        total_projects = await self.jingles.count_for_user(user_id)
-
+        # Each awaited query below costs a full network round trip to the
+        # (remote) database, which dominates dashboard load time far more
+        # than query execution itself. Previously this method issued 11
+        # sequential queries (one per status value); collapsed here to 5
+        # by grouping status counts in a single query each.
         total_variants_result = await self.session.execute(
             select(func.count())
             .select_from(GeneratedVariant)
@@ -52,14 +55,17 @@ class DashboardService:
         )
         total_generated_jingles = total_variants_result.scalar_one()
 
-        draft_count = await self.jingles.count_by_status(user_id, JingleStatus.DRAFT)
-        in_review_count = await self.jingles.count_by_status(user_id, JingleStatus.IN_REVIEW)
-        approved_count = await self.jingles.count_by_status(user_id, JingleStatus.APPROVED)
+        jingle_counts = await self.jingles.status_counts(user_id)
+        total_projects = sum(jingle_counts.values())
+        draft_count = jingle_counts.get(JingleStatus.DRAFT, 0)
+        in_review_count = jingle_counts.get(JingleStatus.IN_REVIEW, 0)
+        approved_count = jingle_counts.get(JingleStatus.APPROVED, 0)
 
-        pending = await self.requests.count_by_status(user_id, GenerationStatus.PENDING)
-        processing = await self.requests.count_by_status(user_id, GenerationStatus.PROCESSING)
-        completed = await self.requests.count_by_status(user_id, GenerationStatus.COMPLETED)
-        failed = await self.requests.count_by_status(user_id, GenerationStatus.FAILED)
+        request_counts = await self.requests.status_counts(user_id)
+        pending = request_counts.get(GenerationStatus.PENDING, 0)
+        processing = request_counts.get(GenerationStatus.PROCESSING, 0)
+        completed = request_counts.get(GenerationStatus.COMPLETED, 0)
+        failed = request_counts.get(GenerationStatus.FAILED, 0)
 
         top_platforms = await self.requests.top_platforms(user_id)
         recent_activity = await self.requests.list_for_user(user_id, limit=10)

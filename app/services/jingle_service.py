@@ -90,10 +90,16 @@ class JingleService:
         jingle_id: uuid.UUID,
         sound_description: str | None,
         voice_enabled: bool,
+        voice_gender: str | None = None,
+        voice_name: str | None = None,
+        language: str | None = None,
     ) -> Jingle:
         jingle = await self._get_owned_or_404(user_id, jingle_id)
         jingle.sound_description = sound_description
         jingle.voice_enabled = voice_enabled
+        jingle.voice_gender = voice_gender
+        jingle.voice_name = voice_name
+        jingle.language = language
         self._bump_step(jingle, 4)
         await self.session.commit()
         jingle = await self._get_owned_or_404(user_id, jingle_id)
@@ -176,6 +182,9 @@ class JingleService:
             platform=original.platform,
             sound_description=original.sound_description,
             voice_enabled=original.voice_enabled,
+            voice_gender=original.voice_gender,
+            voice_name=original.voice_name,
+            language=original.language,
             current_step=original.current_step,
             status=JingleStatus.DRAFT,
         )

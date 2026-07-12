@@ -12,3 +12,11 @@ venv/
 
 # Uploaded media (user data, stored on disk by LocalStorageService)
 uploads/
+
+# Secrets — real API keys, never commit
+scripts/gemini_keys.txt
+
+# Local debug/scratch files
+backend.log
+candia_dump.txt
+find_candia.py

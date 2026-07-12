@@ -110,6 +110,15 @@ class AuthService:
             stored.revoked_at = utcnow()
             await self.session.commit()
 
+    async def delete_account(self, user: User, password: str) -> None:
+        if not verify_password(password, user.hashed_password):
+            raise UnauthorizedError("incorrect password")
+
+        user.deleted_at = utcnow()
+        user.is_active = False
+        await self.refresh_tokens.revoke_all_for_user(user.id)
+        await self.session.commit()
+
     async def forgot_password(self, email: str, background_tasks: BackgroundTasks) -> None:
         user = await self.users.get_by_email(email)
         if user:

@@ -14,6 +14,9 @@ class JingleGenerationInput:
     platform: Platform | None
     sound_description: str | None
     voice_enabled: bool
+    voice_gender: str | None = None
+    voice_name: str | None = None
+    language: str | None = None
     reference_audio_url: str | None = None
 
 

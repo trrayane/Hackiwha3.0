@@ -15,11 +15,18 @@ from app.services.jingle_service import JingleService
 from app.services.reference_audio_service import ReferenceAudioService
 
 
+@lru_cache
 def get_ai_provider() -> AIProviderService:
-    # Swap NotImplementedAIProviderService for a real implementation
-    # (ElevenLabs, Suno, OpenAI, ...) once the AI team wires one up.
-    # Everything downstream only depends on the AIProviderService interface.
-    return NotImplementedAIProviderService()
+    # Real provider: Gemini (lyrics + TTS) + MusicGen (instrumental), see
+    # app/integrations/ai/. Requires GEMINI_API_KEY — falls back to the
+    # not-configured stub if it's missing so the app still boots cleanly
+    # (generation requests just fail with a clear FAILED status instead).
+    if not settings.gemini_api_key:
+        return NotImplementedAIProviderService()
+
+    from app.integrations.ai.provider import GeminiMusicGenProvider
+
+    return GeminiMusicGenProvider(get_storage_service(), settings.upload_dir)
 
 
 @lru_cache

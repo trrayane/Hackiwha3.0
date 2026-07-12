@@ -25,6 +25,9 @@ class JinglePlatformUpdate(BaseModel):
 class JingleCreativeDirectionUpdate(BaseModel):
     sound_description: str | None = Field(default=None, max_length=1000)
     voice_enabled: bool = True
+    voice_gender: str | None = Field(default=None, pattern="^(male|female)$")
+    voice_name: str | None = Field(default=None, max_length=30)
+    language: str | None = Field(default=None, pattern="^(ar-darija|fr|en)$")
 
 
 class JingleUpdate(BaseModel):
@@ -36,6 +39,9 @@ class JingleUpdate(BaseModel):
     platform: Platform | None = None
     sound_description: str | None = Field(default=None, max_length=1000)
     voice_enabled: bool | None = None
+    voice_gender: str | None = Field(default=None, pattern="^(male|female)$")
+    voice_name: str | None = Field(default=None, max_length=30)
+    language: str | None = Field(default=None, pattern="^(ar-darija|fr|en)$")
 
 
 class JingleOut(BaseModel):
@@ -51,6 +57,9 @@ class JingleOut(BaseModel):
     platform: Platform | None
     sound_description: str | None
     voice_enabled: bool
+    voice_gender: str | None = None
+    voice_name: str | None = None
+    language: str | None = None
     is_archived: bool
     feedback_score: float | None = None
     reference_audio: ReferenceAudioOut | None = None

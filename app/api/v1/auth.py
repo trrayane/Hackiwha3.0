@@ -4,6 +4,7 @@ from app.dependencies.auth import get_current_user
 from app.dependencies.services import get_auth_service
 from app.models.user import User
 from app.schemas.auth import (
+    DeleteAccountRequest,
     ForgotPasswordRequest,
     LogoutRequest,
     ResetPasswordRequest,
@@ -73,3 +74,13 @@ async def reset_password(
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.delete("/me", response_model=MessageResponse)
+async def delete_account(
+    payload: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> MessageResponse:
+    await auth_service.delete_account(current_user, payload.password)
+    return MessageResponse(message="account deleted")

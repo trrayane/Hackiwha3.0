@@ -106,3 +106,16 @@ class JingleRepository(BaseRepository[Jingle]):
             .where(Jingle.user_id == user_id, Jingle.deleted_at.is_(None), Jingle.status == status)
         )
         return result.scalar_one()
+
+    async def status_counts(self, user_id: uuid.UUID) -> dict[JingleStatus, int]:
+        """Total + per-status counts in a single round trip (each awaited query
+        against Neon costs a full network RTT, so collapsing several
+        count_by_status calls into one grouped query meaningfully cuts
+        dashboard load latency)."""
+        result = await self.session.execute(
+            select(Jingle.status, func.count())
+            .select_from(Jingle)
+            .where(Jingle.user_id == user_id, Jingle.deleted_at.is_(None))
+            .group_by(Jingle.status)
+        )
+        return dict(result.all())

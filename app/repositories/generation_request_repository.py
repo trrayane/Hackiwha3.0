@@ -53,6 +53,19 @@ class GenerationRequestRepository(BaseRepository[GenerationRequest]):
         )
         return result.scalar_one()
 
+    async def status_counts(self, user_id: uuid.UUID) -> dict[GenerationStatus, int]:
+        """All request status counts in a single round trip — see
+        JingleRepository.status_counts for why this matters against a
+        high-latency remote DB."""
+        result = await self.session.execute(
+            select(GenerationRequest.status, func.count())
+            .select_from(GenerationRequest)
+            .join(Jingle, Jingle.id == GenerationRequest.jingle_id)
+            .where(Jingle.user_id == user_id, Jingle.deleted_at.is_(None))
+            .group_by(GenerationRequest.status)
+        )
+        return dict(result.all())
+
     async def top_platforms(self, user_id: uuid.UUID, limit: int = 5) -> list[tuple[str, int]]:
         result = await self.session.execute(
             select(Jingle.platform, func.count().label("cnt"))

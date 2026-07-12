@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,6 +36,11 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://localhost:6379/0"
 
+    # AI jingle generation (Gemini TTS + MusicGen). Leave blank to run without
+    # a real AI provider — generation requests then fail cleanly (FAILED
+    # status) instead of the app refusing to boot.
+    gemini_api_key: str = ""
+
     upload_dir: str = "uploads/reference_audio"
     public_base_url: str = "http://localhost:8000"
     max_upload_size_mb: int = 20
@@ -61,3 +67,11 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
+
+# app/integrations/ai/{voice_engine,prompt_enhancer}.py read GEMINI_API_KEY
+# straight from the process environment (matching the original standalone
+# prototype they were ported from) rather than importing Settings, to keep
+# them dependency-free/reusable outside this app. Mirror it into os.environ
+# here so `.env`-only configuration still reaches them.
+if settings.gemini_api_key:
+    os.environ.setdefault("GEMINI_API_KEY", settings.gemini_api_key)

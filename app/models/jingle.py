@@ -38,6 +38,9 @@ class Jingle(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     # Step 4 - Creative Direction
     sound_description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     voice_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    voice_gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    voice_name: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 

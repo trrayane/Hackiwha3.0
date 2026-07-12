@@ -85,7 +85,13 @@ async def update_creative_direction(
     storage: StorageService = Depends(get_storage_service),
 ) -> JingleOut:
     jingle = await jingle_service.update_creative_direction(
-        current_user.id, jingle_id, payload.sound_description, payload.voice_enabled
+        current_user.id,
+        jingle_id,
+        payload.sound_description,
+        payload.voice_enabled,
+        payload.voice_gender,
+        payload.voice_name,
+        payload.language,
     )
     return _to_jingle_out(jingle, storage)
 

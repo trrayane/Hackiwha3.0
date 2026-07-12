@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: jingle-engine-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: APP_NAME
+        value: Jingle Engine
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "15"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+      - key: RESET_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: RESET_RESEND_COOLDOWN_SECONDS
+        value: "60"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: UPLOAD_DIR
+        value: uploads/reference_audio
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "20"
+      - key: ALLOWED_AUDIO_EXTENSIONS
+        value: .mp3,.wav,.ogg,.m4a,.aac

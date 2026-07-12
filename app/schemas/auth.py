@@ -72,6 +72,10 @@ class LogoutRequest(BaseModel):
     refresh_token: str
 
 
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=8, max_length=128)
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

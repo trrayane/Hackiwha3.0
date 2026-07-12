@@ -72,6 +72,9 @@ class GenerationService:
             platform=jingle.platform,
             sound_description=jingle.sound_description,
             voice_enabled=jingle.voice_enabled,
+            voice_gender=jingle.voice_gender,
+            voice_name=jingle.voice_name,
+            language=jingle.language,
             reference_audio_url=reference_audio_url,
         )
 
@@ -79,7 +82,10 @@ class GenerationService:
             result = await self.ai_provider.generate_jingle(payload)
         except Exception as exc:  # provider failure must not crash the request
             request.status = GenerationStatus.FAILED
-            request.error_message = str(exc)
+            # error_message is VARCHAR(500) — provider errors (e.g. Gemini's
+            # 429 payload) can run past 1000 chars, which would crash this
+            # failure-handling commit itself with a truncation error.
+            request.error_message = str(exc)[:500]
             request.stage_message = None
             request.completed_at = datetime.now(timezone.utc)
             request.provider = getattr(self.ai_provider, "provider_name", None)
