@@ -1,0 +1,563 @@
+import React, { useEffect, useState } from 'react';
+import { Sidebar } from '../components/Sidebar';
+import JingleDetails from './JingleDetails'; // Make sure the path matches your project layout
+import '../App.css';
+import * as api from '../lib/api';
+import type { JingleOut, GeneratedVariantOut, Platform, JingleStatus } from '../lib/api';
+import {
+  Search,
+  Moon,
+  Sun,
+  Bell,
+  Play,
+  Pause,
+  Download,
+  SquarePen,
+  ChevronDown,
+  Star,
+  Archive,
+  ArchiveRestore,
+  Copy,
+  Trash2
+} from 'lucide-react';
+
+const statusLabels: Record<string, string> = {
+  approved: 'Approved',
+  in_review: 'In Review',
+  draft: 'Draft',
+};
+
+const platformOptions: { label: string; value: Platform }[] = [
+  { label: 'TikTok', value: 'tiktok' },
+  { label: 'Instagram Reels', value: 'instagram_reels' },
+  { label: 'Spotify', value: 'spotify_ads' },
+  { label: 'YouTube', value: 'youtube' },
+  { label: 'Radio', value: 'classic_radio' },
+  { label: 'In-store', value: 'in_store' },
+];
+
+const statusOptions: { label: string; value: JingleStatus }[] = [
+  { label: 'Draft', value: 'draft' },
+  { label: 'In review', value: 'in_review' },
+  { label: 'Approved', value: 'approved' },
+];
+
+const dateRangeToFrom = (rangeLabel: string): string | undefined => {
+  if (rangeLabel === 'Past 7 days') return new Date(Date.now() - 7 * 86400_000).toISOString();
+  if (rangeLabel === 'Past month') return new Date(Date.now() - 30 * 86400_000).toISOString();
+  return undefined;
+};
+
+export default function JingleLibrary() {
+  const colors = {
+    color: '#EDF7ED',
+    white: '#FFFFFF',
+    border: '#D9D9D9',
+    backgroundLightMode: '#FCFBF6',
+    backgroundDarkMode: '#282900',
+    primaryAccent: '#337738',
+    secondaryAccent: '#B4D44D',
+    success: '#A4E3A4',
+    headings: '#282900',
+    secondaryText: '#5C6B4D',
+    cardBackgroundsLavender: '#EDF9ED',
+    cardBackgroundsPeach: '#F5F9E3',
+    cardBackgroundsMint: '#E6F5E2',
+    primaryAccentlight: 'color-mix(in srgb, #337738 14%, transparent)',
+    dangerRed: '#D9383A',
+    nextGreenButton: '#2E6F40'
+  };
+
+  const [activeTab, setActiveTab] = useState('library');
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const [playingRowId, setPlayingRowId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Track clicked jingle for full detail view rendering
+  const [selectedJingleId, setSelectedJingleId] = useState<string | null>(null);
+
+  const [jingles, setJingles] = useState<JingleOut[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filter state — mirrors the backend's /jingles query params.
+  const [platformFilter, setPlatformFilter] = useState<Platform | null>(null);
+  const [statusFilter, setStatusFilter] = useState<JingleStatus | null>(null);
+  const [dateRange, setDateRange] = useState('All time');
+  const [minFeedback, setMinFeedback] = useState(0);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+
+  // Latest variant fetched lazily per row when it's expanded (hovered), keyed by jingle id.
+  const [rowVariants, setRowVariants] = useState<Record<string, GeneratedVariantOut | null>>({});
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const collapseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelCollapse = () => {
+    if (collapseTimerRef.current) {
+      clearTimeout(collapseTimerRef.current);
+      collapseTimerRef.current = null;
+    }
+  };
+
+  const scheduleCollapse = () => {
+    cancelCollapse();
+    collapseTimerRef.current = setTimeout(() => setHoveredRowId(null), 150);
+  };
+
+  const expandRow = (rowId: string) => {
+    cancelCollapse();
+    setHoveredRowId(rowId);
+  };
+
+  const fetchJingles = React.useCallback(() => {
+    setLoading(true);
+    setError(null);
+    api
+      .listJingles(1, 50, {
+        search: searchQuery || undefined,
+        platform: platformFilter ?? undefined,
+        status: statusFilter ?? undefined,
+        is_archived: showArchived ? true : undefined,
+        favorites_only: favoritesOnly || undefined,
+        date_from: dateRangeToFrom(dateRange),
+        min_feedback_score: minFeedback > 0 ? minFeedback : undefined,
+      })
+      .then((res) => setJingles(res.items))
+      .catch((err) => setError(err instanceof Error ? err.message : 'failed to load jingles'))
+      .finally(() => setLoading(false));
+  }, [searchQuery, platformFilter, statusFilter, showArchived, favoritesOnly, dateRange, minFeedback]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchJingles, 250); // debounce search/filter changes
+    return () => clearTimeout(timer);
+  }, [fetchJingles]);
+
+  useEffect(() => {
+    api
+      .favoriteJingles()
+      .then((favs) => setFavoriteIds(new Set(favs.map((f) => f.id))))
+      .catch(() => {});
+  }, [jingles]);
+
+  useEffect(() => {
+    if (!hoveredRowId || rowVariants[hoveredRowId] !== undefined) return;
+    api
+      .listGenerations(hoveredRowId)
+      .then((generations) => {
+        const variant = generations.flatMap((g) => g.variants)[0] ?? null;
+        setRowVariants((prev) => ({ ...prev, [hoveredRowId]: variant }));
+      })
+      .catch(() => setRowVariants((prev) => ({ ...prev, [hoveredRowId]: null })));
+  }, [hoveredRowId, rowVariants]);
+
+  const waveformBars = [
+    10, 16, 12, 20, 24, 14, 18, 22, 12, 26, 20, 16, 24, 10, 18, 22, 14, 20, 26, 12,
+    16, 10, 22, 24, 14, 18, 20, 12, 26, 16, 24, 10, 18, 22, 14, 20, 26, 12, 16, 10,
+    12, 20, 24, 14, 18, 22, 12, 26, 20, 16, 24, 10, 18, 22, 14, 20, 26, 12, 16, 10
+  ];
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'approved': return { backgroundColor: '#E1F3E4', color: '#2E6F40' };
+      case 'in_review': return { backgroundColor: '#FAFAEB', color: '#B2BA32' };
+      default: return { backgroundColor: '#F1F1EF', color: '#7E7E7A' };
+    }
+  };
+
+  const handleToggleFavorite = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await api.toggleFavorite(id);
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleToggleArchive = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await api.toggleArchive(id);
+    fetchJingles();
+  };
+
+  const handleDuplicate = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await api.duplicateJingle(id);
+    fetchJingles();
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this jingle permanently?')) return;
+    await api.deleteJingle(id);
+    fetchJingles();
+  };
+
+  const togglePlay = (rowId: string) => {
+    const variant = rowVariants[rowId];
+    if (!audioRef.current) audioRef.current = new Audio();
+    if (playingRowId === rowId) {
+      audioRef.current.pause();
+      setPlayingRowId(null);
+      return;
+    }
+    if (variant?.audio_url) {
+      audioRef.current.src = variant.audio_url;
+      audioRef.current.play().catch(() => {});
+    }
+    setPlayingRowId(rowId);
+  };
+
+  // Condition Check: If a row was selected, break out and swap layout structures seamlessly
+  if (selectedJingleId !== null) {
+    return <JingleDetails jingleId={selectedJingleId} onBack={() => setSelectedJingleId(null)} />;
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      minHeight: '100vh',
+      backgroundColor: colors.white,
+      fontFamily: '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      color: '#111111'
+    }}>
+
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} colors={colors} />
+
+      <main style={{
+        flexGrow: 1,
+        padding: '24px 24px 0 24px',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        height: '100vh'
+      }}>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.backgroundLightMode, borderRadius: '40px', padding: '12px 28px', border: '1px solid ' + colors.border }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'transparent', width: '40%' }}>
+            <Search size={20} color="#7E7E7A" strokeWidth={2.5} />
+            <input
+              type="text"
+              placeholder="Search for jungles"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ border: 'none', backgroundColor: 'transparent', outline: 'none', width: '100%', fontSize: '16px', fontWeight: '500', color: colors.headings }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '95px', height: '51px', display: 'flex', backgroundColor: colors.primaryAccentlight, borderRadius: '40px', padding: '2px 4px', alignItems: 'center', gap: '4px', border: '1px solid ' + colors.border }}>
+              <button style={{ border: 'none', backgroundColor: 'transparent', padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Moon size={23} color={colors.primaryAccent} strokeWidth={2.2} />
+              </button>
+              <button style={{ width: '43px', height: '43px', border: 'none', backgroundColor: colors.white, borderRadius: '50%', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', boxShadow: '0px 1px 3px rgba(0,0,0,0.05)' }}>
+                <Sun size={23} color={colors.headings} strokeWidth={2.2} />
+              </button>
+            </div>
+            <div style={{ width: '51px', height: '51px', backgroundColor: colors.primaryAccentlight, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #EAE9E4', cursor: 'pointer' }}>
+              <Bell size={23} color={colors.headings} strokeWidth={2.2} />
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          flexGrow: 1,
+          backgroundColor: colors.backgroundLightMode,
+          border: '1px solid ' + colors.border,
+          borderBottom: 'none',
+          borderRadius: '36px 36px 0 0',
+          padding: '44px 44px 24px 44px',
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+          overflowY: 'auto'
+        }}>
+
+          <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <h1 style={{ fontSize: '32px', color: colors.headings, margin: '0 0 6px 0', fontWeight: '700', letterSpacing: '-0.5px' }}>Jingle Library</h1>
+              <p style={{ fontSize: '18px', color: colors.secondaryText, margin: 0, fontWeight: '500' }}>Browse and manage all your generated audio assets.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setFavoritesOnly((v) => !v)}
+                style={{ height: '38px', padding: '0 16px', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: favoritesOnly ? colors.primaryAccentlight : colors.white, color: favoritesOnly ? colors.primaryAccent : colors.headings, fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+              >
+                Favorites
+              </button>
+              <button
+                onClick={() => setShowArchived((v) => !v)}
+                style={{ height: '38px', padding: '0 16px', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: showArchived ? colors.primaryAccentlight : colors.white, color: showArchived ? colors.primaryAccent : colors.headings, fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+              >
+                Archived
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div style={{ backgroundColor: '#FDEDED', border: '1px solid #D9383A', color: '#D9383A', borderRadius: '10px', padding: '12px 16px', fontSize: '14px', fontWeight: '600', marginBottom: '20px' }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+
+            <div style={{ flexGrow: 1, border: '1px solid #D5D5D1', borderRadius: '16px', backgroundColor: colors.white, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #EAE9E4', height: '54px', fontSize: '14px', color: '#7E7E7A', fontWeight: '600' }}>
+                    <th style={{ paddingLeft: '24px', width: '32%' }}>Jingle</th>
+                    <th style={{ width: '15%' }}>Platform</th>
+                    <th style={{ width: '14%' }}>Feedback</th>
+                    <th style={{ width: '15%' }}>Status</th>
+                    <th style={{ width: '12%' }}>Duration</th>
+                    <th style={{ paddingRight: '24px', width: '12%' }}>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!loading && jingles.length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '24px', fontSize: '14px', color: colors.secondaryText }}>
+                        No jingles found.
+                      </td>
+                    </tr>
+                  )}
+                  {jingles.map((row) => {
+                    const isRowExpanded = hoveredRowId === row.id;
+                    const variant = rowVariants[row.id];
+
+                    return (
+                      <React.Fragment key={row.id}>
+                        <tr
+                          onMouseEnter={() => expandRow(row.id)}
+                          onMouseLeave={scheduleCollapse}
+                          onClick={() => setSelectedJingleId(row.id)} // Trigger full page state swap
+                          style={{
+                            borderBottom: isRowExpanded ? 'none' : '1px solid #F1F1EF',
+                            height: '58px',
+                            fontSize: '15px',
+                            fontWeight: '600',
+                            color: colors.headings,
+                            backgroundColor: isRowExpanded ? colors.white : 'transparent',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s ease'
+                          }}
+                        >
+                          <td style={{ paddingLeft: '24px', fontWeight: '700' }}>{row.brand_name}</td>
+                          <td>{row.platform ?? '—'}</td>
+                          <td>{row.feedback_score?.toFixed(1) ?? '—'}</td>
+                          <td>
+                            <span style={{
+                              padding: '4px 12px',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              fontWeight: '700',
+                              ...getStatusStyle(row.status)
+                            }}>
+                              {statusLabels[row.status] ?? row.status}
+                            </span>
+                          </td>
+                          <td>{variant?.duration_seconds ? `0:${String(Math.round(variant.duration_seconds)).padStart(2, '0')}` : '—'}</td>
+                          <td style={{ paddingRight: '24px', color: '#7E7E7A', fontSize: '14px' }}>{new Date(row.updated_at).toLocaleDateString()}</td>
+                        </tr>
+
+                        {isRowExpanded && (
+                          <tr
+                            onMouseEnter={() => expandRow(row.id)}
+                            onMouseLeave={scheduleCollapse}
+                            style={{ backgroundColor: colors.white, borderBottom: '1px solid #EAE9E4' }}
+                          >
+                            <td colSpan={6} style={{ padding: '0 24px 20px 24px' }}>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: 'transparent',
+                                gap: '16px',
+                                width: '100%'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexGrow: 1 }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // Stop clicking play from choosing row
+                                      togglePlay(row.id);
+                                    }}
+                                    disabled={!variant}
+                                    style={{
+                                      width: '42px',
+                                      height: '42px',
+                                      borderRadius: '50%',
+                                      backgroundColor: colors.primaryAccent,
+                                      border: 'none',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      color: colors.white,
+                                      cursor: variant ? 'pointer' : 'default',
+                                      opacity: variant ? 1 : 0.5
+                                    }}
+                                  >
+                                    {playingRowId === row.id ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" style={{ marginLeft: '2px' }} />}
+                                  </button>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexGrow: 1, maxWidth: '520px' }}>
+                                    {waveformBars.map((bHeight, i) => (
+                                      <div
+                                        key={i}
+                                        style={{
+                                          flexGrow: 1,
+                                          height: `${bHeight}px`,
+                                          backgroundColor: colors.primaryAccent,
+                                          borderRadius: '2px'
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                  <button
+                                    onClick={(e) => handleToggleFavorite(row.id, e)}
+                                    title={favoriteIds.has(row.id) ? 'Unfavorite' : 'Favorite'}
+                                    style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: colors.white, color: favoriteIds.has(row.id) ? '#B4D44D' : colors.headings, cursor: 'pointer' }}
+                                  >
+                                    <Star size={18} strokeWidth={2.2} fill={favoriteIds.has(row.id) ? '#B4D44D' : 'transparent'} />
+                                  </button>
+                                  <a
+                                    href={variant?.audio_url ?? undefined}
+                                    download
+                                    onClick={(e) => { e.stopPropagation(); if (!variant?.audio_url) e.preventDefault(); }}
+                                    style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: colors.white, color: colors.headings, cursor: variant?.audio_url ? 'pointer' : 'default', opacity: variant?.audio_url ? 1 : 0.5 }}
+                                  >
+                                    <Download size={18} strokeWidth={2.2} />
+                                  </a>
+                                  <button
+                                    onClick={(e) => handleDuplicate(row.id, e)}
+                                    title="Duplicate"
+                                    style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: colors.white, color: colors.headings, cursor: 'pointer' }}
+                                  >
+                                    <Copy size={18} strokeWidth={2.2} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleToggleArchive(row.id, e)}
+                                    title={row.is_archived ? 'Unarchive' : 'Archive'}
+                                    style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: colors.white, color: colors.headings, cursor: 'pointer' }}
+                                  >
+                                    {row.is_archived ? <ArchiveRestore size={18} strokeWidth={2.2} /> : <Archive size={18} strokeWidth={2.2} />}
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDelete(row.id, e)}
+                                    title="Delete"
+                                    style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: colors.white, color: colors.dangerRed, cursor: 'pointer' }}
+                                  >
+                                    <Trash2 size={18} strokeWidth={2.2} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedJingleId(row.id); }}
+                                    style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: colors.white, color: colors.headings, cursor: 'pointer' }}
+                                  >
+                                    <SquarePen size={18} strokeWidth={2.2} />
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{
+              width: '280px',
+              backgroundColor: colors.white,
+              border: '1px solid #D5D5D1',
+              borderRadius: '16px',
+              padding: '24px',
+              boxSizing: 'border-box',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px'
+            }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: colors.headings, margin: 0 }}>Filter</h2>
+
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: '700', color: colors.headings, margin: '0 0 12px 0' }}>Platform</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', color: colors.secondaryText, cursor: 'pointer' }}>
+                    <input type="radio" name="platform" checked={platformFilter === null} onChange={() => setPlatformFilter(null)} style={{ accentColor: colors.primaryAccent, width: '16px', height: '16px' }} />
+                    All
+                  </label>
+                  {platformOptions.map((p) => (
+                    <label key={p.value} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', color: colors.secondaryText, cursor: 'pointer' }}>
+                      <input type="radio" name="platform" checked={platformFilter === p.value} onChange={() => setPlatformFilter(p.value)} style={{ accentColor: colors.primaryAccent, width: '16px', height: '16px' }} />
+                      {p.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: '700', color: colors.headings, margin: '0 0 12px 0' }}>Status</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', color: colors.secondaryText, cursor: 'pointer' }}>
+                    <input type="radio" name="status" checked={statusFilter === null} onChange={() => setStatusFilter(null)} style={{ accentColor: colors.primaryAccent, width: '16px', height: '16px' }} />
+                    All
+                  </label>
+                  {statusOptions.map((s) => (
+                    <label key={s.value} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '500', color: colors.secondaryText, cursor: 'pointer' }}>
+                      <input type="radio" name="status" checked={statusFilter === s.value} onChange={() => setStatusFilter(s.value)} style={{ accentColor: colors.primaryAccent, width: '16px', height: '16px' }} />
+                      {s.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: '700', color: colors.headings, margin: '0 0 8px 0' }}>Date range</h4>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <select
+                    value={dateRange}
+                    onChange={(e) => setDateRange(e.target.value)}
+                    style={{ width: '100%', height: '42px', padding: '0 36px 0 16px', borderRadius: '10px', border: '1px solid #D5D5D1', backgroundColor: colors.white, outline: 'none', fontSize: '14px', fontWeight: '500', color: colors.headings, appearance: 'none', cursor: 'pointer' }}
+                  >
+                    <option>All time</option>
+                    <option>Past 7 days</option>
+                    <option>Past month</option>
+                  </select>
+                  <ChevronDown size={16} color={colors.headings} style={{ position: 'absolute', right: '14px', pointerEvents: 'none' }} />
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ fontSize: '14px', fontWeight: '700', color: colors.headings, margin: '0 0 12px 0' }}>Min Feedback Score</h4>
+                <input
+                  type="range"
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  value={minFeedback}
+                  onChange={(e) => setMinFeedback(Number(e.target.value))}
+                  style={{ width: '100%', accentColor: colors.primaryAccent, cursor: 'pointer', marginBottom: '4px' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', color: colors.headings }}>
+                  <span>0</span>
+                  <span>{minFeedback.toFixed(1)}</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
